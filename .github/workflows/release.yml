@@ -1,0 +1,52 @@
+# Builds ttc.exe on tag push and creates a GitHub Release with it.
+# Trigger: push a tag like v1.0.0 (must be on a commit that has this workflow).
+name: Build and Release ttc
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build Windows executable
+        run: python build_exe.py
+
+      - name: Verify build output
+        run: |
+          if (-not (Test-Path dist\ttc.exe)) {
+            Write-Error "Build failed: dist\ttc.exe was not created"
+            exit 1
+          }
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/ttc.exe
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

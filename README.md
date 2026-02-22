@@ -25,6 +25,21 @@ Perfect for analyzing lens sharpness, resolution, and optical performance from t
 
 ## Installation
 
+### Option 0: Download from GitHub Releases (Recommended)
+
+If you just want to run `ttc` on Windows and don't care about Python:
+
+- Go to the **Releases** page on GitHub for this project.
+- Download the latest `ttc.exe`.
+- Run it from a terminal:
+
+```cmd
+ttc.exe --help
+ttc.exe ..    REM process parent directory
+```
+
+No Python or dependencies required.
+
 ### Option 1: Quick Install (Recommended)
 
 **Unix/Linux/macOS:**
@@ -48,13 +63,7 @@ git clone https://github.com/hsnilsson/ttc.git
 cd ttc
 ```
 
-**2. Install dependencies:**
-
-```bash
-pip install Pillow
-```
-
-**3. Install ttc command:**
+**2. Install ttc command:**
 
 **Unix/Linux/macOS:**
 
@@ -76,6 +85,8 @@ install.bat
 ```bash
 git clone https://github.com/hsnilsson/ttc.git
 cd ttc
+
+# Install all Python dependencies (Pillow, rawpy, etc.)
 pip install -r requirements.txt
 
 # Run directly
@@ -91,7 +102,7 @@ chmod +x ttc
 ### Build Standalone Executable
 
 ```bash
-# Build .exe that doesn't require Python
+# Build .exe that doesn't require Python (includes rawpy for full‑res DNG)
 python build_exe.py
 
 # Creates ttc.exe - single file, no installation needed
@@ -112,10 +123,14 @@ py -3 ttc.py --help
 ## Requirements
 
 - Python 3.7+
-- Pillow (PIL) imaging library
+- Dependencies listed in `requirements.txt`:
+  - Pillow (PIL) imaging library
+  - rawpy (for full‑resolution DNG support)
+
+Install for development:
 
 ```bash
-pip install Pillow
+pip install -r requirements.txt
 ```
 
 ## Usage
@@ -136,6 +151,19 @@ ttc /path/to/test_photos
 
 ```bash
 ttc /path/to/test_photos -o /path/to/output
+```
+
+### PNG vs DNG behaviour
+
+- By default, `ttc` **prefers DNG files**:
+  - If both DNG and PNG exist in a folder, only **DNG** files are processed.
+  - If *no* DNGs exist but PNGs do, `ttc` will ask if it should fall back to PNGs.
+- To force processing **only PNGs**, use:
+
+```bash
+ttc --use-pngs-only
+# or the shorter alias:
+ttc --use-pngs
 ```
 
 ### Examples
@@ -187,17 +215,20 @@ Each input PNG generates one composite image:
 ## Command Line Options
 
 ```
-usage: ttc [-h] [-o OUTPUT] [input_dir]
+usage: ttc [-h] [-o OUTPUT] [--use-pngs-only] [input_dir]
 
 Create composite images from test target photos
 
 positional arguments:
-  input_dir             Directory containing PNG files (default: current directory)
+  input_dir             Directory containing PNG/DNG files (default: current directory)
 
 optional arguments:
   -h, --help            show this help message and exit
   -o OUTPUT, --output OUTPUT
                         Output directory for composite images (default: INPUT_DIR/crops)
+  --use-pngs-only, --use-pngs
+                        Only process PNG files; default is to prefer DNG and fall back to PNG
+                        only after asking
 
 Examples:
   ttc                    # Process current directory
