@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Initial release of Vlad's Test Target Cropper
+- Initial release of Test Target Cropper
 - Composite image creation from Vlad's test target photos
 - 2x2 grid layout with corner crops and center overlay
 - Pixel-perfect output (no compression, no interpolation)
@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cross-platform compatibility (Windows, Mac, Linux)
 - Smart output placement (default: INPUT_DIR/crops/)
 - Automatic output directory creation
-- Professional error handling and validation
+- Error handling and validation
 - Version information display (-v/--version)
 
 ### Features
@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Purpose
 
 - Perfect for analyzing lens sharpness, resolution, and optical performance
-- Designed specifically for Vlad's test target photos
+- Designed mainly for Vlad's test target photos
 - Ideal for pixel peeping and detailed image analysis
 
 ### Documentation
@@ -43,7 +43,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive README with usage examples
 - Command-line help with examples
 - Configuration guide with percentage coordinates
-- TODO list for future improvements
 - MIT License
 
 ### Technical
