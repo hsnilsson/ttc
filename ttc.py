@@ -115,21 +115,17 @@ def create_composite_layout(input_png, output_prefix="composite", output_dir="cr
         print(f"Error processing {input_png}: {e}")
 
 def process_all_files(input_dir=".", output_dir=None, use_pngs_only=False):
-    """Process all image files in specified directory"""
+    """Process all image files in specified directory. Prefers DNG; falls back to PNG after asking if no DNGs."""
     
     # Set default output directory to be inside input directory
     if output_dir is None:
         output_dir = os.path.join(input_dir, "crops")
     
-    # Find all image files (PNG and DNG)
-    if use_pngs_only:
-        search_patterns = [os.path.join(input_dir, "*.png")]
-    else:
-        search_patterns = [
-            os.path.join(input_dir, "*.png"),
-            os.path.join(input_dir, "*.dng")
-        ]
-    
+    # Find all image files (always check both PNG and DNG so we can prefer DNG or prompt)
+    search_patterns = [
+        os.path.join(input_dir, "*.png"),
+        os.path.join(input_dir, "*.dng")
+    ]
     print(f"Searching for files with patterns: {search_patterns}")
     
     all_files = []
@@ -141,16 +137,27 @@ def process_all_files(input_dir=".", output_dir=None, use_pngs_only=False):
     # Filter out existing composites and crop files
     exclude_patterns = ["composite", "_crops_"]
     
-    input_files = []
-    for file in all_files:
-        filename = os.path.basename(file)
-        should_exclude = False
-        for pattern in exclude_patterns:
-            if pattern in filename:
-                should_exclude = True
-                break
-        if not should_exclude:
-            input_files.append(file)
+    def excluded(filename):
+        return any(p in filename for p in exclude_patterns)
+    
+    candidates = [f for f in all_files if not excluded(os.path.basename(f))]
+    png_files = [f for f in candidates if f.lower().endswith(".png")]
+    dng_files = [f for f in candidates if f.lower().endswith(".dng")]
+    
+    if use_pngs_only:
+        input_files = png_files
+    else:
+        # Prefer DNG; if no DNGs but PNGs exist, ask before using PNGs
+        if dng_files:
+            input_files = dng_files
+        elif png_files:
+            response = input("No DNG files found. Process PNG files instead? [y/N] ").strip().lower()
+            if response not in ("y", "yes"):
+                print("Skipping.")
+                return
+            input_files = png_files
+        else:
+            input_files = []
     
     if not input_files:
         print(f"No image files found to process in '{input_dir}'.")
@@ -189,7 +196,7 @@ Examples:
         "input_dir", 
         nargs="?", 
         default=".",
-        help="Directory containing PNG files (default: current directory)"
+        help="Directory containing PNG/DNG files (default: current directory)"
     )
     parser.add_argument(
         "-o", "--output",
@@ -197,9 +204,10 @@ Examples:
         help="Output directory for composite images (default: INPUT_DIR/crops)"
     )
     parser.add_argument(
-        "--use-pngs-only",
+        "--use-pngs-only", "--use-pngs",
+        dest="use_pngs_only",
         action="store_true",
-        help="Only process PNG files, ignore DNG files"
+        help="Only process PNG files; default is to prefer DNG and fall back to PNG only after asking"
     )
     parser.add_argument(
         "-v", "--version",
@@ -221,7 +229,7 @@ Examples:
     # Create output directory if it doesn't exist
     os.makedirs(args.output_dir, exist_ok=True)
     
-    process_all_files(args.input_dir, args.output_dir)
+    process_all_files(args.input_dir, args.output_dir, args.use_pngs_only)
     return 0
 
 if __name__ == "__main__":
