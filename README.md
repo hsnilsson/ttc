@@ -1,10 +1,12 @@
-# Vlad's Test Target Cropper
+# Test Target Cropper (ttc)
 
-A Python script to create composite images from Vlad's test target photos for pixel peeping analysis.
+A Python script to create composite images from test target photos for pixel peeping analysis.
+
+Perfect for analyzing lens sharpness, resolution, and optical performance from test target photos.
 
 ## Purpose
 
-This script processes photos of Vlad's test targets and creates compact composite images containing:
+This script processes photos of test targets and creates compact composite images containing:
 
 - 4 corner crops (square, 7% of image height)
 - 1 center crop (resolution chart area)
@@ -20,6 +22,92 @@ Perfect for analyzing lens sharpness, resolution, and optical performance from t
 - **Large image support**: Handles high-resolution outputs
 - **Flexible input/output**: Specify any directory for input and output
 - **Smart output placement**: By default, creates output in input directory
+
+## Installation
+
+### Option 1: Quick Install (Recommended)
+
+**Unix/Linux/macOS:**
+
+```bash
+curl -sSL https://raw.githubusercontent.com/hsnilsson/ttc/main/install.sh | bash
+```
+
+**Windows:**
+
+```cmd
+curl -sSL https://raw.githubusercontent.com/hsnilsson/ttc/main/install.bat | cmd
+```
+
+### Option 2: Manual Install
+
+**1. Clone or download:**
+
+```bash
+git clone https://github.com/hsnilsson/ttc.git
+cd ttc
+```
+
+**2. Install dependencies:**
+
+```bash
+pip install Pillow
+```
+
+**3. Install ttc command:**
+
+**Unix/Linux/macOS:**
+
+```bash
+chmod +x install.sh
+./install.sh
+```
+
+**Windows:**
+
+```cmd
+install.bat
+```
+
+### Option 3: Development Install
+
+**For development or testing:**
+
+```bash
+git clone https://github.com/hsnilsson/ttc.git
+cd ttc
+pip install -r requirements.txt
+
+# Run directly
+python ttc.py --help
+
+# Or make executable (Unix/macOS)
+chmod +x ttc
+./ttc --help
+```
+
+## Option 4: No Python Required (Standalone)
+
+### Build Standalone Executable
+
+```bash
+# Build .exe that doesn't require Python
+python build_exe.py
+
+# Creates ttc.exe - single file, no installation needed
+# Distribute to anyone - they just run ttc.exe
+```
+
+### Use Existing Python Directly
+
+```bash
+# Run without installation
+python ttc.py --help
+
+# Or with any Python version
+python3 ttc.py --help
+py -3 ttc.py --help
+```
 
 ## Requirements
 
@@ -101,7 +189,7 @@ Each input PNG generates one composite image:
 ```
 usage: ttc [-h] [-o OUTPUT] [input_dir]
 
-Create composite images from Vlad's test target photos
+Create composite images from test target photos
 
 positional arguments:
   input_dir             Directory containing PNG files (default: current directory)

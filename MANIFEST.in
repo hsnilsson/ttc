@@ -4,6 +4,8 @@ include CHANGELOG.md
 include requirements.txt
 include ttc.py
 include ttc
+include install.sh
+include install.bat
 recursive-include archive *.py *.md *.sh *.bat
 global-exclude *.pyc
 global-exclude __pycache__

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Vlad's Test Target Cropper - Command Line Interface
+Test Target Cropper - Command Line Interface
 
-Creates composite images from Vlad's test target photos for pixel peeping analysis.
+Creates composite images from test target photos for pixel peeping analysis.
 Generates 2x2 grid of corner crops with center overlay.
 
 Perfect for analyzing lens sharpness, resolution, and optical performance.
@@ -13,7 +13,7 @@ Usage:
     ttc /path/to/photos    # Process absolute path
     ttc . -o results       # Custom output directory
 
-Author: Vlad's Test Target Cropper
+Author: hsnilsson
 License: MIT
 Version: 1.0.0
 """
@@ -185,7 +185,7 @@ Examples:
     parser.add_argument(
         "-v", "--version",
         action="version",
-        version=f"Vlad's Test Target Cropper {__version__}"
+        version=f"Test Target Cropper {__version__}"
     )
     
     args = parser.parse_args()
@@ -206,4 +206,4 @@ Examples:
     return 0
 
 if __name__ == "__main__":
-    exit(main())
+    sys.exit(main())
