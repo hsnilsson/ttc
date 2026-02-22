@@ -114,47 +114,61 @@ def create_composite_layout(input_png, output_prefix="composite", output_dir="cr
     except Exception as e:
         print(f"Error processing {input_png}: {e}")
 
-def process_all_files(input_dir=".", output_dir=None):
-    """Process all PNG files in specified directory"""
+def process_all_files(input_dir=".", output_dir=None, use_pngs_only=False):
+    """Process all image files in specified directory"""
     
     # Set default output directory to be inside input directory
     if output_dir is None:
         output_dir = os.path.join(input_dir, "crops")
     
-    # Find all PNG files (excluding existing composites)
-    search_pattern = os.path.join(input_dir, "*.png")
-    png_files = glob.glob(search_pattern)
+    # Find all image files (PNG and DNG)
+    if use_pngs_only:
+        search_patterns = [os.path.join(input_dir, "*.png")]
+    else:
+        search_patterns = [
+            os.path.join(input_dir, "*.png"),
+            os.path.join(input_dir, "*.dng")
+        ]
+    
+    print(f"Searching for files with patterns: {search_patterns}")
+    
+    all_files = []
+    for pattern in search_patterns:
+        found_files = glob.glob(pattern)
+        print(f"Pattern '{pattern}' found {len(found_files)} files")
+        all_files.extend(found_files)
+    
+    # Filter out existing composites and crop files
     exclude_patterns = ["composite", "_crops_"]
     
-    # Filter out existing composite and crop files
     input_files = []
-    for png_file in png_files:
-        filename = os.path.basename(png_file)
+    for file in all_files:
+        filename = os.path.basename(file)
         should_exclude = False
         for pattern in exclude_patterns:
             if pattern in filename:
                 should_exclude = True
                 break
         if not should_exclude:
-            input_files.append(png_file)
+            input_files.append(file)
     
     if not input_files:
-        print(f"No PNG files found to process in '{input_dir}'.")
+        print(f"No image files found to process in '{input_dir}'.")
         return
     
-    print(f"Found {len(input_files)} PNG files to process:")
+    print(f"Found {len(input_files)} image files to process:")
     for file in input_files:
         print(f"  - {file}")
     print(f"Output directory: {output_dir}")
     print()
     
     # Process each file
-    for png_file in input_files:
+    for file in input_files:
         # Create output prefix from filename
-        base_name = os.path.splitext(os.path.basename(png_file))[0]
+        base_name = os.path.splitext(os.path.basename(file))[0]
         output_prefix = f"{base_name}_composite"
         
-        create_composite_layout(png_file, output_prefix, output_dir)
+        create_composite_layout(file, output_prefix, output_dir)
     
     print(f"\nProcessing complete! Check the '{output_dir}' directory for results.")
 
@@ -181,6 +195,11 @@ Examples:
         "-o", "--output",
         dest="output_dir",
         help="Output directory for composite images (default: INPUT_DIR/crops)"
+    )
+    parser.add_argument(
+        "--use-pngs-only",
+        action="store_true",
+        help="Only process PNG files, ignore DNG files"
     )
     parser.add_argument(
         "-v", "--version",

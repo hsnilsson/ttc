@@ -110,12 +110,15 @@ def build_executable():
     cmd = [
         sys.executable, "-m", "PyInstaller",
         "--onefile",           # Single executable
-        "--console",           # Keep console window (fixes argparse output)
+        "--console",           # Keep console window (fixes hanging)
         "--name=ttc",          # Output name
         "--distpath=dist",       # Output directory
         "--hidden-import=PIL",  # Include PIL/Pillow
         "--hidden-import=PIL.Image",
         "--hidden-import=PIL.ImageFilter",
+        "--hidden-import=PIL.ImageFile",  # Add ImageFile support
+        "--hidden-import=PIL.PngImagePlugin",  # Add PNG support
+        "--noupx",             # Disable UPX compression (fixes hanging)
         "ttc.py"               # Input script
     ]
     
