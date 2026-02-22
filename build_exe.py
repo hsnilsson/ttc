@@ -68,13 +68,7 @@ def build_executable():
     try:
         subprocess.check_call(cmd)
         print("Build successful!")
-        print(f"Executable created: dist/ttc.exe")
-        
-        # Copy to current directory
-        if os.path.exists("dist/ttc.exe"):
-            shutil.copy("dist/ttc.exe", "ttc.exe")
-            print("Copied to current directory: ttc.exe")
-        
+        print(f"Executable: dist/ttc.exe")
         return True
     except subprocess.CalledProcessError as e:
         print(f"Build failed: {e}")
