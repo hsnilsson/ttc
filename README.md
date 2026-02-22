@@ -1,223 +1,50 @@
 # Test Target Cropper (ttc)
 
-A Python script to create composite images from test target photos for pixel peeping analysis.
-
-Perfect for analyzing lens sharpness, resolution, and optical performance from test target photos.
-
-## Purpose
-
-This script processes photos of test targets and creates compact composite images containing:
-
-- 4 corner crops (square, 7% of image height)
-- 1 center crop (resolution chart area)
-- All crops arranged in a 2x2 grid with center overlay
-
-Perfect for analyzing lens sharpness, resolution, and optical performance from test target photos.
-
-## Features
-
-- **Pixel-perfect output**: No compression, no interpolation artifacts
-- **Configurable positions**: Easy adjustment of crop coordinates via percentages
-- **Batch processing**: Processes all PNG files in directory
-- **Large image support**: Handles high-resolution outputs
-- **Flexible input/output**: Specify any directory for input and output
-- **Smart output placement**: By default, creates output in input directory
+Creates composite images from test target photos (DNG or PNG) for pixel peeping—4 corner crops plus center crop in a 2×2 grid with center overlay. Good for lens sharpness and resolution analysis.
 
 ## Installation
 
-### Option 0: Download from GitHub Releases (Recommended)
+**Easiest (Windows):** Download `ttc.exe` from the [Releases](https://github.com/hsnilsson/ttc/releases) page. No Python required.
 
-If you just want to run `ttc` on Windows and don't care about Python:
-
-- Go to the **Releases** page on GitHub for this project.
-- Download the latest `ttc.exe`.
-- Run it from a terminal:
-
-```cmd
-ttc.exe --help
-ttc.exe ..    REM process parent directory
-```
-
-No Python or dependencies required.
-
-### Option 1: Quick Install (Recommended)
-
-**Unix/Linux/macOS:**
-
+**Unix/Linux/macOS (install script):**
 ```bash
 curl -sSL https://raw.githubusercontent.com/hsnilsson/ttc/main/install.sh | bash
 ```
 
-**Windows:**
-
+**Windows (install script):**
 ```cmd
 curl -sSL https://raw.githubusercontent.com/hsnilsson/ttc/main/install.bat | cmd
 ```
 
-### Option 2: Manual Install
-
-**1. Clone or download:**
-
+**From source:**
 ```bash
-git clone https://github.com/hsnilsson/ttc.git
-cd ttc
-```
-
-**2. Install ttc command:**
-
-**Unix/Linux/macOS:**
-
-```bash
-chmod +x install.sh
-./install.sh
-```
-
-**Windows:**
-
-```cmd
-install.bat
-```
-
-### Option 3: Development Install
-
-**For development or testing:**
-
-```bash
-git clone https://github.com/hsnilsson/ttc.git
-cd ttc
-
-# Install all Python dependencies (Pillow, rawpy, etc.)
+git clone https://github.com/hsnilsson/ttc.git && cd ttc
 pip install -r requirements.txt
-
-# Run directly
 python ttc.py --help
-
-# Or make executable (Unix/macOS)
-chmod +x ttc
-./ttc --help
 ```
 
-## Option 4: No Python Required (Standalone)
-
-### Build Standalone Executable
-
-```bash
-# Build .exe that doesn't require Python (includes rawpy for full‑res DNG)
-python build_exe.py
-
-# Creates ttc.exe - single file, no installation needed
-# Distribute to anyone - they just run ttc.exe
-```
-
-### Use Existing Python Directly
-
-```bash
-# Run without installation
-python ttc.py --help
-
-# Or with any Python version
-python3 ttc.py --help
-py -3 ttc.py --help
-```
+**Build your own .exe:** From repo root, run `python build_exe.py`. Produces `ttc.exe` (includes rawpy for full‑res DNG).
 
 ## Requirements
 
-- Python 3.7+
-- Dependencies listed in `requirements.txt`:
-  - Pillow (PIL) imaging library
-  - rawpy (for full‑resolution DNG support)
-
-Install for development:
-
-```bash
-pip install -r requirements.txt
-```
+Python 3.7+. Install deps: `pip install -r requirements.txt` (Pillow, rawpy, numpy).
 
 ## Usage
 
-### Basic Usage (current directory)
-
 ```bash
-ttc
+ttc                          # current directory → ./crops
+ttc /path/to/photos           # custom input
+ttc /path/to/photos -o out    # custom output dir
 ```
 
-### Specify Input Directory
+**DNG vs PNG:** By default ttc prefers **DNG** (processes only DNGs if present). If there are no DNGs but there are PNGs, it asks before using PNGs. To use only PNGs: `ttc --use-pngs` (or `--use-pngs-only`).
 
-```bash
-ttc /path/to/test_photos
-```
-
-### Custom Output Directory
-
-```bash
-ttc /path/to/test_photos -o /path/to/output
-```
-
-### PNG vs DNG behaviour
-
-- By default, `ttc` **prefers DNG files**:
-  - If both DNG and PNG exist in a folder, only **DNG** files are processed.
-  - If *no* DNGs exist but PNGs do, `ttc` will ask if it should fall back to PNGs.
-- To force processing **only PNGs**, use:
-
-```bash
-ttc --use-pngs-only
-# or the shorter alias:
-ttc --use-pngs
-```
-
-### Examples
-
-```bash
-# Process test photos in current directory (output: ./crops)
-ttc
-
-# Process test photos in parent directory (output: ../crops)
-ttc ..
-
-# Process test photos with custom output directory
-ttc ../test_photos -o ./results
-
-# Process test photos with absolute paths
-ttc "C:\Users\Name\Pictures\Test_Targets" -o "C:\Users\Name\Results"
-```
-
-## Configuration
-
-Adjust crop positions by modifying the percentage values in the script:
-
-```python
-# Corner positions (x%, y% from top-left)
-corner_positions = {
-    'top_left': (0.095, 0.120),
-    'top_right': (0.862, 0.143),
-    'bottom_left': (0.078, 0.779),
-    'bottom_right': (0.848, 0.801)
-}
-
-# Center crop (x1%, y1%, x2%, y2% from top-left)
-center_crop_percent = {
-    'x1': 0.58, 'y1': 0.37,
-    'x2': 0.61, 'y2': 0.42
-}
-```
-
-## Output
-
-Each input PNG generates one composite image:
-
-- `filename_composite.png` in the specified output directory
-- **Default location**: `INPUT_DIR/crops/` (inside input directory)
-- Maintains original image quality (no compression)
-- Square corner crops for consistent analysis
-- Center overlay covering resolution chart area
-
-## Command Line Options
+### Command line options
 
 ```
-usage: ttc [-h] [-o OUTPUT] [--use-pngs-only] [input_dir]
+usage: ttc [-h] [-o OUTPUT] [--use-pngs-only] [-v] [input_dir]
 
-Create composite images from test target photos
+Create composite images from Vlad's test target photos
 
 positional arguments:
   input_dir             Directory containing PNG/DNG files (default: current directory)
@@ -227,8 +54,8 @@ optional arguments:
   -o OUTPUT, --output OUTPUT
                         Output directory for composite images (default: INPUT_DIR/crops)
   --use-pngs-only, --use-pngs
-                        Only process PNG files; default is to prefer DNG and fall back to PNG
-                        only after asking
+                        Only process PNG files; default is to prefer DNG and fall back to PNG only after asking
+  -v, --version         show program's version number and exit
 
 Examples:
   ttc                    # Process current directory
@@ -237,41 +64,14 @@ Examples:
   ttc . -o results       # Custom output directory
 ```
 
+## Configuration
+
+Crop positions are percentage-based and set in `ttc.py`: `corner_positions` and `center_crop_percent`. Edit those to match your test target layout.
+
+## Output
+
+One composite per input file: `filename_composite.png` in the output directory (default `INPUT_DIR/crops/`). No compression; square corner crops; center overlay.
+
 ## License
 
-MIT License
-
-## TODO List
-
-### Future Improvements
-
-- [ ] **Make squares adjustable by input**
-  - Add command-line parameter to specify corner crop size (currently fixed at 7% of image height)
-  - Allow both percentage and absolute pixel values
-  - Example: `--corner-size 0.1` or `--corner-size 500px`
-
-- [ ] **Make squares not having to be squares**
-  - Add option to specify bottom-right corner for one of the corner crops
-  - Allow rectangular corner crops instead of forcing square aspect ratio
-  - Could be implemented as `--corner-shape rectangular` or individual corner dimensions
-
-- [ ] **Same for middle (center crop)**
-  - Add command-line parameters to specify center crop coordinates
-  - Allow override of hardcoded percentages (58%-61% H, 37%-42% V)
-  - Example: `--center-crop 0.55,0.35,0.65,0.45` or `--center-crop pixels:10524,3188,12438,4463`
-
-- [ ] **Read original files f-stop**
-  - And make sure it's apparent in the generated ones, perhaps by the filenames
-
-### Implementation Ideas
-
-```bash
-# Future command line interface might look like:
-python create_composite.py ../png_files \
-  --corner-size 0.08 \
-  --corner-shape rectangular \
-  --center-crop 0.56,0.34,0.63,0.44 \
-  -o ./results
-```
-
-These improvements would make the script much more flexible for different test targets and use cases.
+MIT
