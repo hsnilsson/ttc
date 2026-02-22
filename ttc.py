@@ -15,7 +15,7 @@ Usage:
 
 Author: hsnilsson
 License: MIT
-Version: 1.0.0
+Version: 1.2.0
 """
 
 import argparse
@@ -27,7 +27,7 @@ from PIL import Image
 # Increase PIL's image size limit for large files
 Image.MAX_IMAGE_PIXELS = None  # Disable the limit
 
-__version__ = "1.0.0"
+__version__ = "1.2.0"
 
 def _open_image(path):
     """Open image as PIL Image. For DNG, use rawpy for full resolution when available."""
