@@ -36,7 +36,13 @@ def _open_image(path):
         try:
             import rawpy
             with rawpy.imread(path) as raw:
-                rgb = raw.postprocess(output_bps=8)
+                # Full resolution, high-quality demosaic for pixel peeping (rawpy uses LibRaw)
+                rgb = raw.postprocess(
+                    output_bps=8,
+                    use_auto_wb=True,
+                    no_auto_bright=True,
+                    output_color=rawpy.ColorSpace.sRGB,
+                )
             # rgb is (height, width, 3) uint8
             return Image.fromarray(rgb, mode="RGB")
         except ImportError:
