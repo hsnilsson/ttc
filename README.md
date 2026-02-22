@@ -229,6 +229,9 @@ MIT License
   - Allow override of hardcoded percentages (58%-61% H, 37%-42% V)
   - Example: `--center-crop 0.55,0.35,0.65,0.45` or `--center-crop pixels:10524,3188,12438,4463`
 
+- [ ] **Read original files f-stop**
+  - And make sure it's apparent in the generated ones, perhaps by the filenames
+
 ### Implementation Ideas
 
 ```bash
