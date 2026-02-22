@@ -1,22 +1,34 @@
 # Test Target Cropper (ttc)
 
-Creates composite images from test target photos (DNG or PNG) for pixel peeping—4 corner crops plus center crop in a 2×2 grid with center overlay. Good for lens sharpness and resolution analysis.
+![Ridiculous explanation](flow.jpg)
+
+Creates composite images from test target photos (DNG or PNG) for pixel peeping - 4 corner crops plus center crop in a 2×2 grid with center overlay.
+
+Brings size down to a minimum:
+Good for quicker flicking through your different f-stop images, and sending them to friends.
+
+Just make sure you converted your files to DNG first, then drop the exe in that same dir and doubble click it.
+
+onsider everything below this paragraph as vibe coded and not too much checked. Happy cropping! And just create a github issue if there are any issues. /Henrik
 
 ## Installation
 
 **Easiest (Windows):** Download `ttc.exe` from the [Releases](https://github.com/hsnilsson/ttc/releases) page. No Python required.
 
 **Unix/Linux/macOS (install script):**
+
 ```bash
 curl -sSL https://raw.githubusercontent.com/hsnilsson/ttc/main/install.sh | bash
 ```
 
 **Windows (install script):**
+
 ```cmd
 curl -sSL https://raw.githubusercontent.com/hsnilsson/ttc/main/install.bat | cmd
 ```
 
 **From source:**
+
 ```bash
 git clone https://github.com/hsnilsson/ttc.git && cd ttc
 pip install -r requirements.txt

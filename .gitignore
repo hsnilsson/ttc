@@ -45,13 +45,7 @@ Thumbs.db
 
 # Output directories
 crops/
-results/
 output/
-*.png
-*.jpg
-*.jpeg
-*.tiff
-*.tif
 
 # Logs
 *.log
