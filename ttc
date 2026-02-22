@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Vlad's Test Target Cropper - Command Line Interface
+Test Target Cropper - Command Line Interface
 
 This is a launcher script for the Test Target Cropper.
 It simply calls the main ttc.py module.
