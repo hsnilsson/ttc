@@ -42,9 +42,9 @@ def build_executable():
     """Build standalone executable"""
     print("Building Test Target Cropper executable...")
     
-    # Install Pillow first
-    print("Installing Pillow...")
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow"])
+    # Install dependencies (Pillow + rawpy for full-res DNG)
+    print("Installing Pillow and rawpy...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow", "rawpy"])
     
     # Build command
     cmd = [
@@ -52,14 +52,17 @@ def build_executable():
         "--onefile",           # Single executable
         "--console",           # Keep console window (fixes hanging)
         "--name=ttc",          # Output name
-        "--distpath=dist",       # Output directory
-        "--hidden-import=PIL",  # Include PIL/Pillow
+        "--distpath=dist",     # Output directory
+        "--hidden-import=PIL",
         "--hidden-import=PIL.Image",
         "--hidden-import=PIL.ImageFilter",
-        "--hidden-import=PIL.ImageFile",  # Add ImageFile support
-        "--hidden-import=PIL.PngImagePlugin",  # Add PNG support
-        "--noupx",             # Disable UPX compression (fixes hanging)
-        "ttc.py"               # Input script
+        "--hidden-import=PIL.ImageFile",
+        "--hidden-import=PIL.PngImagePlugin",
+        "--hidden-import=rawpy",  # Full-resolution DNG
+        "--hidden-import=numpy",
+        "--collect-all=rawpy",    # Bundle libraw DLLs etc.
+        "--noupx",
+        "ttc.py"
     ]
     
     try:

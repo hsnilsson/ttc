@@ -29,6 +29,25 @@ Image.MAX_IMAGE_PIXELS = None  # Disable the limit
 
 __version__ = "1.0.0"
 
+def _open_image(path):
+    """Open image as PIL Image. For DNG, use rawpy for full resolution when available."""
+    path_lower = path.lower()
+    if path_lower.endswith(".dng"):
+        try:
+            import rawpy
+            with rawpy.imread(path) as raw:
+                rgb = raw.postprocess(output_bps=8)
+            # rgb is (height, width, 3) uint8
+            return Image.fromarray(rgb, mode="RGB")
+        except ImportError:
+            print("Warning: rawpy not installed. DNG will be read as embedded preview (small). Install with: pip install rawpy")
+            return Image.open(path).copy()
+        except Exception as e:
+            print(f"Warning: rawpy failed for {path}: {e}. Falling back to embedded preview.")
+            return Image.open(path).copy()
+    with Image.open(path) as im:
+        return im.copy()
+
 def create_composite_layout(input_png, output_prefix="composite", output_dir="crops"):
     """Create composite image with center crop on top and 4 corners below"""
     
@@ -36,80 +55,80 @@ def create_composite_layout(input_png, output_prefix="composite", output_dir="cr
     os.makedirs(output_dir, exist_ok=True)
     
     try:
-        # Open the source image
-        with Image.open(input_png) as img:
-            width, height = img.size
-            print(f"Processing {input_png}")
-            print(f"Original image size: {width}x{height}")
-            
-            # Calculate crop dimensions
-            corner_height = int(height * 0.07)  # 7% of image height
-            corner_width = corner_height  # Make square
-            
-            # Center crop by percentage (adjust these as needed)
-            center_crop_percent = {
-                'x1': 0.58, 'y1': 0.37,  # top-left corner
-                'x2': 0.61, 'y2': 0.42   # bottom-right corner
-            }
-            
-            # Convert center crop percentages to pixel coordinates
-            center_left = int(width * center_crop_percent['x1'])
-            center_top = int(height * center_crop_percent['y1'])
-            center_right = int(width * center_crop_percent['x2'])
-            center_bottom = int(height * center_crop_percent['y2'])
-            
-            # Hardcoded corner positions by percentage (adjust these as needed)
-            corner_positions = {
-                'top_left': (0.095, 0.120),      # x%, y% from top-left
-                'top_right': (0.862, 0.143),    # x%, y% from top-left
-                'bottom_left': (0.078, 0.779),   # x%, y% from top-left
-                'bottom_right': (0.848, 0.801)  # x%, y% from top-left
-            }
-            
-            # Convert percentage positions to pixel coordinates
-            corner_positions_pixels = {}
-            for name, (x_percent, y_percent) in corner_positions.items():
-                x = int(width * x_percent)
-                y = int(height * y_percent)
-                corner_positions_pixels[name] = (x, y)
-            
-            # Crop regions without any processing
-            center_crop = img.crop((center_left, center_top, center_right, center_bottom))
-            
-            corner_crops = {}
-            for name, (x, y) in corner_positions_pixels.items():
-                crop_box = (x, y, x + corner_width, y + corner_height)
-                corner_crops[name] = img.crop(crop_box)
-            
-            # Create composite layout
-            composite_width = 2 * corner_width
-            composite_height = 2 * corner_height
-            
-            # Create composite image with same mode as original
-            composite = Image.new(img.mode, (composite_width, composite_height))
-            
-            # Place corners in 2x2 grid (base layer)
-            composite.paste(corner_crops['top_left'], (0, 0))
-            composite.paste(corner_crops['top_right'], (corner_width, 0))
-            composite.paste(corner_crops['bottom_left'], (0, corner_height))
-            composite.paste(corner_crops['bottom_right'], (corner_width, corner_height))
-            
-            # Calculate center position for overlay
-            center_overlay_x = (composite_width - center_crop.width) // 2
-            center_overlay_y = (composite_height - center_crop.height) // 2
-            
-            # Paste center crop on top
-            composite.paste(center_crop, (center_overlay_x, center_overlay_y))
-            
-            # Save composite image with maximum quality settings
-            output_file = os.path.join(output_dir, f"{output_prefix}.png")
-            composite.save(output_file, compress_level=0, optimize=False)
-            
-            print(f"Created composite: {output_file}")
-            print(f"Composite size: {composite_width}x{composite_height}")
-            print(f"Center crop: {center_crop.width}x{center_crop.height}")
-            print(f"Corner crops: {corner_width}x{corner_height}")
-            print("-" * 50)
+        # Open the source image (full res for DNG when rawpy available)
+        img = _open_image(input_png)
+        width, height = img.size
+        print(f"Processing {input_png}")
+        print(f"Original image size: {width}x{height}")
+        
+        # Calculate crop dimensions
+        corner_height = int(height * 0.07)  # 7% of image height
+        corner_width = corner_height  # Make square
+        
+        # Center crop by percentage (adjust these as needed)
+        center_crop_percent = {
+            'x1': 0.58, 'y1': 0.37,  # top-left corner
+            'x2': 0.61, 'y2': 0.42   # bottom-right corner
+        }
+        
+        # Convert center crop percentages to pixel coordinates
+        center_left = int(width * center_crop_percent['x1'])
+        center_top = int(height * center_crop_percent['y1'])
+        center_right = int(width * center_crop_percent['x2'])
+        center_bottom = int(height * center_crop_percent['y2'])
+        
+        # Hardcoded corner positions by percentage (adjust these as needed)
+        corner_positions = {
+            'top_left': (0.095, 0.120),      # x%, y% from top-left
+            'top_right': (0.862, 0.143),    # x%, y% from top-left
+            'bottom_left': (0.078, 0.779),   # x%, y% from top-left
+            'bottom_right': (0.848, 0.801)  # x%, y% from top-left
+        }
+        
+        # Convert percentage positions to pixel coordinates
+        corner_positions_pixels = {}
+        for name, (x_percent, y_percent) in corner_positions.items():
+            x = int(width * x_percent)
+            y = int(height * y_percent)
+            corner_positions_pixels[name] = (x, y)
+        
+        # Crop regions without any processing
+        center_crop = img.crop((center_left, center_top, center_right, center_bottom))
+        
+        corner_crops = {}
+        for name, (x, y) in corner_positions_pixels.items():
+            crop_box = (x, y, x + corner_width, y + corner_height)
+            corner_crops[name] = img.crop(crop_box)
+        
+        # Create composite layout
+        composite_width = 2 * corner_width
+        composite_height = 2 * corner_height
+        
+        # Create composite image with same mode as original
+        composite = Image.new(img.mode, (composite_width, composite_height))
+        
+        # Place corners in 2x2 grid (base layer)
+        composite.paste(corner_crops['top_left'], (0, 0))
+        composite.paste(corner_crops['top_right'], (corner_width, 0))
+        composite.paste(corner_crops['bottom_left'], (0, corner_height))
+        composite.paste(corner_crops['bottom_right'], (corner_width, corner_height))
+        
+        # Calculate center position for overlay
+        center_overlay_x = (composite_width - center_crop.width) // 2
+        center_overlay_y = (composite_height - center_crop.height) // 2
+        
+        # Paste center crop on top
+        composite.paste(center_crop, (center_overlay_x, center_overlay_y))
+        
+        # Save composite image with maximum quality settings
+        output_file = os.path.join(output_dir, f"{output_prefix}.png")
+        composite.save(output_file, compress_level=0, optimize=False)
+        
+        print(f"Created composite: {output_file}")
+        print(f"Composite size: {composite_width}x{composite_height}")
+        print(f"Center crop: {center_crop.width}x{center_crop.height}")
+        print(f"Corner crops: {corner_width}x{corner_height}")
+        print("-" * 50)
             
     except Exception as e:
         print(f"Error processing {input_png}: {e}")
