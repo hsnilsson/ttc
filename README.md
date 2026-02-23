@@ -2,12 +2,17 @@
 
 ![flow](flow.jpg)
 
-Creates composite images from test target photos (DNG or PNG) for pixel peeping - 4 corner crops plus center crop in a 2×2 grid with center overlay.
+Creates composite images from test target photos (DNG or PNG) for analyzing lens performance and optical setup quality. Extracts 4 corner crops and 1 center crop stitched together for easy scrutiny and sharing.
 
-Brings size down to a minimum:
-Good for quicker flicking through your different f-stop images, and sending them to friends.
+### Why use a test target like Vlads test targets?
 
-Just make sure you converted your files to DNG first, then drop the exe in that same dir and doubble click it.
+- **Film flatness & optical quality:** Quickly assess how flat your film or sensor sits in the camera by comparing corner to center sharpness
+- **Maximum resolution testing:** Measure the actual achievable resolution (lp/mm) of your complete setup—camera, lens, scanner, and film handling combined
+- **F-stop optimization:** Easily compare multiple shots taken at different apertures side-by-side, making it simple to find the f-stop that gives your preferred balance of sharpness between corners and center
+
+The tool dramatically reduces file sizes, making it faster to flip through sequences and much easier to share comparisons with others.
+
+Just convert your test target photos to DNG first, then drop the .exe in that directory and run it.
 
 Consider everything below this paragraph as vibe coded and not too much checked. Happy cropping! And just create a github issue if there are any issues. /Henrik
 
