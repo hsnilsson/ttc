@@ -1,6 +1,6 @@
 # Test Target Cropper (ttc)
 
-![Ridiculous explanation](flow.jpg)
+![flow](flow.jpg)
 
 Creates composite images from test target photos (DNG or PNG) for pixel peeping - 4 corner crops plus center crop in a 2×2 grid with center overlay.
 
