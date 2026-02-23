@@ -9,7 +9,7 @@ Good for quicker flicking through your different f-stop images, and sending them
 
 Just make sure you converted your files to DNG first, then drop the exe in that same dir and doubble click it.
 
-onsider everything below this paragraph as vibe coded and not too much checked. Happy cropping! And just create a github issue if there are any issues. /Henrik
+Consider everything below this paragraph as vibe coded and not too much checked. Happy cropping! And just create a github issue if there are any issues. /Henrik
 
 ## Installation
 
