@@ -3,7 +3,7 @@ from PyInstaller.utils.hooks import collect_all
 
 datas = []
 binaries = []
-hiddenimports = ['PIL', 'PIL.Image', 'PIL.ImageFilter', 'PIL.ImageFile', 'PIL.PngImagePlugin', 'rawpy', 'numpy']
+hiddenimports = ['PIL', 'PIL.Image', 'PIL.ImageFilter', 'PIL.ImageFile', 'PIL.PngImagePlugin', 'rawpy', 'numpy', 'psutil']
 tmp_ret = collect_all('rawpy')
 datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 
