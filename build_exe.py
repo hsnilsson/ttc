@@ -44,7 +44,7 @@ def build_executable():
     
     # Install dependencies (Pillow + rawpy for full-res DNG)
     print("Installing Pillow and rawpy...")
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow", "rawpy", "psutil"])
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow", "rawpy"])
     
     # Build command
     cmd = [
@@ -60,7 +60,6 @@ def build_executable():
         "--hidden-import=PIL.PngImagePlugin",
         "--hidden-import=rawpy",  # Full-resolution DNG
         "--hidden-import=numpy",
-        "--hidden-import=psutil",  # Memory monitoring
         "--collect-all=rawpy",    # Bundle libraw DLLs etc.
         "--noupx",
         "ttc.py"

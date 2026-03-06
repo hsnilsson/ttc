@@ -5,35 +5,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.0] - 2026-03-05
-
-### Added
-
-- Parallel processing for multiple images using ThreadPoolExecutor
-- Configurable worker count with `-j/--jobs` flag (default: CPU count)
-- Coordinate caching with `@lru_cache` decorator for repeated calculations
-- Explicit memory management with image cleanup to reduce memory usage
-- Intelligent memory monitoring with psutil (optional dependency)
-- Adaptive resource scaling based on memory usage and CPU cores
-- Memory-efficient RAW processing settings to prevent exhaustion
-
-### Performance
-
-- 2-8x faster processing for multiple images (depending on CPU cores)
-- Lower memory footprint with proper resource cleanup
-- Reduced CPU overhead from cached crop coordinate calculations
-- Adaptive worker scaling: uses all cores except one (avoids 100% CPU)
-- Memory thresholds: 90% usage warning, adaptive throttling at 60%/80%
-
-### Changed
-
-- Updated version to 1.3.0
-- Optimized `create_composite_layout()` function with cached coordinates
-- Refactored `process_all_files()` to support parallel execution
-- Memory-efficient RAW demosaic algorithm (LINEAR instead of default)
-- Graceful fallback when psutil is not available
-- Conservative CPU usage to maintain system responsiveness
-
 ## [1.2.0] - 2026-02-22
 
 ### Changed
