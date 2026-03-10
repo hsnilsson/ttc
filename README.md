@@ -1,6 +1,6 @@
 # Test Target Cropper (C Version)
 
-Creates composite images from test target photos (DNG or PNG) for analyzing lens performance and optical setup quality. Extracts 4 corner crops and 1 center crop stitched together for easy scrutiny and sharing.
+Creates composite images from test target photos (PNG/JPG) for analyzing lens performance and optical setup quality. Extracts 4 corner crops and 1 center crop stitched together for easy scrutiny and sharing.
 
 ### Why use a test target like Vlads test targets?
 
@@ -10,71 +10,88 @@ Creates composite images from test target photos (DNG or PNG) for analyzing lens
 
 ## Current Status
 
-**✅ C Version:** Native performance, small executable
-**⚠️ VIPS Issues:** Currently has VIPS library linking problems
+**✅ WORKING:** C version with stb_image (PNG/JPG support)
+**📦 BACKUP:** Python version (DNG support via rawpy)
 
 ## Quick Start
 
 ```bash
-# Install VIPS library
-install-vips.bat
-
-# Build the executable
-build-w64devkit.bat
+# Build the C version
+build-simple.bat
 
 # Run the tool
-ttc.exe .
+ttc-simple.exe .
 ```
 
 ## Features
 
 - ✅ Native C performance
-- ✅ Small executable (~94KB)
-- ✅ No Python dependency
-- ⚠️ VIPS linking issues (needs debugging)
+- ✅ Small executable (~50KB)
+- ✅ No external dependencies (stb_image is header-only)
+- ✅ PNG, JPG, BMP, GIF support
+- ✅ Cross-platform compatible
 
 ## Requirements
 
 - Windows
-- VIPS image processing library
 - w64devkit (C compiler)
+- No external image libraries needed!
 
 ## Installation
 
-1. **Install VIPS:**
-   ```cmd
-   install-vips.bat
-   ```
-
-2. **Install Compiler:**
+1. **Install Compiler:**
    ```cmd
    install-w64devkit.bat
    ```
 
+2. **Install stb_image:**
+   ```cmd
+   install-stb.bat
+   ```
+
 3. **Build:**
    ```cmd
-   build-w64devkit.bat
+   build-simple.bat
    ```
 
 ## Usage
 
 ```cmd
 # Process current directory
-ttc.exe
+ttc-simple.exe
 
 # Process specific directory
-ttc.exe ../photos
+ttc-simple.exe ../photos
 
 # Custom output directory
-ttc.exe . -o results
+ttc-simple.exe . -o results
 
 # Only process PNG files
-ttc.exe --use-pngs-only
+ttc-simple.exe --use-pngs-only
 ```
 
-## Troubleshooting
+## Output
 
-The C version currently has VIPS library linking issues. See [DNG_COMPATIBILITY.md](DNG_COMPATIBILITY.md) for details.
+Creates a composite image with:
+- Center crop (top position)
+- Four corner crops (bottom row)
+- High resolution for pixel peeping
+
+## File Formats
+
+### C Version (ttc-simple.exe)
+- ✅ PNG, JPG, BMP, GIF, TGA, etc.
+- ❌ DNG (use Python version)
+
+### Python Version (ttc.py)
+- ✅ DNG (full resolution via rawpy)
+- ✅ PNG (via PIL/Pillow)
+- ✅ All other formats
+
+## Performance
+
+- **C version:** ~50KB executable, native performance
+- **Python version:** Requires Python runtime, larger memory usage
 
 ## License
 
