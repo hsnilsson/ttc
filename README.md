@@ -29,16 +29,20 @@ Consider everything below this paragraph as vibe coded and not too much checked.
 install-vs-build-tools.bat  # Install Visual Studio Build Tools
 build.bat                   # Build ttc.exe
 
-# Option 2: Manual Visual Studio setup
+# Option 2: w64devkit (portable, no installation)
+install-w64devkit.bat       # Download w64devkit (portable dev kit)
+build-w64devkit.bat         # Build ttc.exe
+
+# Option 3: Manual Visual Studio setup
 # Download from: https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio
 # Install "C++ build tools" with MSVC and Windows SDK
 build.bat
 
-# Option 3: MinGW-w64
+# Option 4: MinGW-w64
 # Install MinGW-w64 and add to PATH
 gcc -O2 -I"C:\vips\include" ttc.c -o ttc.exe -L"C:\vips\lib" -lvips -lglib-2.0
 
-# Option 4: WSL
+# Option 5: WSL
 wsl --install
 sudo apt install libvips-dev pkg-config gcc
 gcc -O2 $(pkg-config --cflags vips) ttc.c -o ttc $(pkg-config --libs vips)
