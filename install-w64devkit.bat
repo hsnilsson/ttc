@@ -1,4 +1,5 @@
 @echo off
+setlocal enabledelayedexpansion
 REM Install w64devkit - Portable C/C++ Development Kit for Windows
 REM Downloads and sets up w64devkit for Test Target Cropper
 
@@ -6,10 +7,7 @@ echo Installing w64devkit for Test Target Cropper...
 echo.
 
 REM Check if w64devkit is already available
-w64devkit\bin\gcc.exe --version >nul 2>&1
-if errorlevel 1 (
-    echo w64devkit not found
-) else (
+if exist "w64devkit\bin\gcc.exe" (
     echo w64devkit already available!
     w64devkit\bin\gcc.exe --version | findstr "gcc"
     echo.
@@ -17,9 +15,11 @@ if errorlevel 1 (
     echo   w64devkit\bin\gcc.exe -O2 -I"C:\vips\include" ttc.c -o ttc.exe -L"C:\vips\lib" -lvips -lglib-2.0
     echo.
     echo Or add to PATH permanently:
-    echo   set PATH=%PATH%;%CD%\w64devkit\bin
+    echo   set PATH=!PATH!;!CD!\w64devkit\bin
     pause
     exit /b 0
+) else (
+    echo w64devkit not found
 )
 
 echo Downloading w64devkit...
@@ -93,7 +93,7 @@ ttc.exe --help
 
 echo.
 echo To use w64devkit in future, add to PATH:
-echo   set PATH=%PATH%;%CD%\w64devkit\bin
+echo   set PATH=!PATH!;!CD!\w64devkit\bin
 echo.
 echo Or run: w64devkit\bin\gcc.exe directly
 

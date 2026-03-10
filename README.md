@@ -84,6 +84,22 @@ python ttc.py --help
 
 **Python version (legacy):** Python 3.7+. Install deps: `pip install -r requirements.txt` (Pillow, rawpy, numpy).
 
+## Important: DNG File Compatibility
+
+**C Version (VIPS):**
+
+- Supports most PNG files perfectly
+- Limited DNG support: Some DNG files may not be compatible with VIPS library
+- Workaround: Convert problematic DNG files to PNG using the Python version or other tools
+- Error Handling: C version will gracefully skip unsupported DNG files with clear error messages
+
+**Python Version (PIL/Pillow):**
+
+- Full DNG support via rawpy library
+- Recommended for DNG files that don't work with C version
+
+**Recommendation:** Use the C version for PNG files and better performance. Use the Python version for DNG files if the C version has compatibility issues.
+
 ## Usage
 
 ```bash
