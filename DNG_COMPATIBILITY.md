@@ -2,53 +2,95 @@
 
 ## Issue Overview
 
-The C version of Test Target Cropper uses the VIPS image processing library, which has limited support for certain DNG file formats. Some DNG files may not load properly, resulting in a NULL image error.
+The C version of Test Target Cropper uses the VIPS image processing library. While VIPS command-line tools work correctly, there are **linking issues** between the C implementation and VIPS library that prevent proper image loading.
+
+**Current Status:**
+
+- **Python version:** Works perfectly with DNG (uses rawpy/LibRaw)
+- **VIPS command-line:** Works correctly with all formats
+- **C version:** VIPS library linking issues prevent image loading
 
 ## Symptoms
 
-When processing certain DNG files, you may see:
+When processing any image files (DNG or PNG) with the C version, you may see:
+
 ```
-Error: VIPS loaded [filename].dng but returned NULL image
+Error: VIPS loaded [filename] but returned NULL image
 This is a known issue with some DNG files.
 Try converting the DNG to a different format or use PNG files.
 ```
 
+**Note:** This error message is misleading - the issue affects all image formats, not just DNG files.
+
+## Root Cause
+
+The issue is **not** with the DNG files themselves, but with VIPS library linking in the C implementation:
+
+- VIPS command-line tools work: `vips.exe thumbnail input.png output.png 100`
+- Python VIPS bindings work (if available)
+- C code linking to VIPS library fails to load images properly
+
 ## Solutions
 
-### Option 1: Convert DNG to PNG (Recommended)
-Use the Python version to convert problematic DNG files:
+### Option 1: Use Python Version (Recommended for DNG)
+
+The Python version has full DNG support via rawpy:
+
 ```bash
-python ttc.py .  # This will process DNG files and create PNG composites
+python ttc.py .  # Process DNG files with full resolution
 ```
 
-### Option 2: Use PNG Files Directly
-Convert your DNG files to PNG using any tool (Adobe Camera Raw, Darktable, etc.), then use the C version:
+### Option 2: Use VIPS Command-Line for PNG
+
+Convert images with VIPS command-line, then use C version:
+
 ```cmd
-ttc.exe --use-pngs-only
+# Convert DNG to PNG using Python (full resolution)
+python convert-dng-to-png.py
+
+# Or use VIPS command-line directly
+C:\vips\bin\vips.exe thumbnail input.dng output.png 1000
+
+# Then use C version for PNG files
+ttc.exe --use-pngs-only .
 ```
 
-### Option 3: Use Python Version for DNG
-Keep both versions available:
-- Use `ttc.exe` (C version) for PNG files - faster and smaller
-- Use `ttc.py` (Python version) for DNG files - better compatibility
+### Option 3: Fix VIPS Linking (Advanced)
+
+The C version needs VIPS library linking fixes:
+
+- Ensure proper VIPS library dependencies are linked
+- Check for version compatibility between VIPS headers and libraries
+- May require rebuilding VIPS from source
 
 ## Technical Details
 
-**Root Cause:** VIPS library returns success but NULL image pointer for some DNG files
-**Status:** Known limitation, not a bug in the C code
-**Workaround:** Proper error handling prevents crashes
+**Python Version Architecture:**
 
-## File Status
+- DNG files: rawpy → LibRaw → full resolution (19136x12752)
+- PNG files: PIL/Pillow → standard image processing
 
-- ✅ **PNG files:** Full support in C version
-- ⚠️ **DNG files:** Limited support in C version  
-- ✅ **DNG files:** Full support in Python version
+**C Version Architecture:**
 
-## Recommendation
+- All files: VIPS library → linking issues → NULL image pointer
 
-For best results:
-1. **Primary workflow:** Use C version (`ttc.exe`) for PNG files
-2. **Fallback:** Use Python version (`ttc.py`) for DNG files with issues
-3. **Conversion:** Convert problematic DNGs to PNG for future use
+**VIPS Command-Line:**
 
-The C version provides significant performance benefits (94KB vs Python runtime) and faster processing for compatible files.
+- All formats: VIPS CLI → works correctly
+- Example: `vips.exe thumbnail input.dng output.png 1000`
+
+## Recommendations
+
+1. **For DNG files:** Use Python version (has rawpy support)
+2. **For PNG files:** Use Python version or fix C version VIPS linking
+3. **For development:** Focus on fixing VIPS library linking in C version
+
+## Future Work
+
+The C version VIPS linking issue needs to be resolved for:
+
+- Native C performance benefits
+- Standalone executable without Python dependency
+- Cross-platform compatibility
+
+Until then, the Python version provides the most reliable image processing.

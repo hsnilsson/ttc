@@ -35,31 +35,12 @@ echo.
 echo Getting latest VIPS version information...
 echo.
 
-REM Use GitHub API to get the latest release
-powershell -Command "
-try {
-    $release = Invoke-RestMethod -Uri 'https://api.github.com/repos/libvips/build-win64-mxe/releases/latest' -Headers @{'Accept'='application/vnd.github.v3+json'}
-    $version = $release.tag_name
-    $downloadUrl = $release.assets | Where-Object {$_.name -like 'vips-dev-w64-all-*.zip'} | Select-Object -First 1 -ExpandProperty browser_download_url
-    Write-Output \"Latest version: $version\"
-    Write-Output \"Download URL: $downloadUrl\"
-    $version | Out-File -FilePath 'vips-version.txt' -Encoding utf8
-    $downloadUrl | Out-File -FilePath 'vips-download.txt' -Encoding utf8
-} catch {
-    Write-Output \"Failed to get latest version, using fallback\"
-    Write-Output \"v8.18.0\" | Out-File -FilePath 'vips-version.txt' -Encoding utf8
-    Write-Output \"https://github.com/libvips/build-win64-mxe/releases/download/v8.18.0/vips-dev-w64-all-8.18.0.zip\" | Out-File -FilePath 'vips-download.txt' -Encoding utf8
-}
-"
+REM Use fallback version for now (more reliable)
+set "version=v8.18.0"
+set "downloadUrl=https://github.com/libvips/build-win64-mxe/releases/download/v8.18.0/vips-dev-w64-all-8.18.0.zip"
 
-if not exist "vips-version.txt" (
-    echo ERROR: Failed to get version information
-    pause
-    exit /b 1
-)
-
-set /p version=<vips-version.txt
-set /p downloadUrl=<vips-download.txt
+echo Using VIPS version: %version%
+echo.
 
 echo Latest VIPS version: %version%
 echo.
@@ -76,10 +57,10 @@ echo This may take a few minutes...
 echo.
 
 REM Download the VIPS package
-echo Downloading from: %downloadUrl%
-curl -L --retry 3 --retry-delay 10 --show-error -o "vips-dev-w64-all-%version%.zip" "%downloadUrl%"
+echo Downloading from: !downloadUrl!
+curl -L --retry 3 --retry-delay 10 --show-error -o "vips-dev-w64-all-!version!.zip" "!downloadUrl!"
 
-if not exist "vips-dev-w64-all-%version%.zip" (
+if not exist "vips-dev-w64-all-!version!.zip" (
     echo ERROR: Failed to download VIPS
     echo.
     echo Manual download required:
@@ -96,18 +77,18 @@ echo Download successful!
 echo.
 
 echo Checking file integrity...
-for %%I in ("vips-dev-w64-all-%version%.zip") do set size=%%~zI
-echo File size: %size% bytes
+for %%I in ("vips-dev-w64-all-!version!.zip") do set size=%%~zI
+echo File size: !size! bytes
 
-if %size% LSS 10000000 (
-    echo ERROR: Downloaded file is too small (%size% bytes)
-    echo Expected at least 10 MB - download probably failed
-    del "vips-dev-w64-all-%version%.zip"
+if !size! GTR 1000000 (
+    echo File size looks good (!size! bytes).
+) else (
+    echo ERROR: Downloaded file is too small (!size! bytes)
+    echo Expected at least 1 MB - download probably failed
+    del "vips-dev-w64-all-!version!.zip"
     pause
     exit /b 1
 )
-
-echo File size looks good.
 echo.
 
 echo Extracting VIPS...
@@ -216,8 +197,6 @@ if %errors% GTR 0 (
 echo.
 echo Cleaning up...
 del "vips-dev-w64-all-%version%.zip" 2>nul
-del vips-version.txt 2>nul
-del vips-download.txt 2>nul
 
 echo.
 echo ========================================

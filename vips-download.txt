@@ -1,0 +1,1 @@
+﻿https://github.com/libvips/build-win64-mxe/releases/download/v8.18.0/vips-dev-w64-all-8.18.0.zip
