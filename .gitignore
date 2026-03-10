@@ -94,7 +94,20 @@ extract-*
 archive/
 
 # w64devkit
-w64devkit
+w64devkit/
+
+# TCC compiler
+tcc/
+
+# Executables
+*.exe
+
+# Copied headers (temporary)
+libraw.h
+libraw_types.h
+
+# PowerShell scripts (temporary)
+*.ps1
 
 # Large image files (should never be committed)
 *.dng
@@ -111,3 +124,5 @@ w64devkit
 !CONTRIBUTING.md
 !MANIFEST.in
 !requirements.txt
+
+dng-test
