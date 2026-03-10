@@ -65,15 +65,12 @@ build-detailed*.bat
 build-file*.bat
 build-minimal*.bat
 build-output*.bat
-build-vips*.bat
-build-test*.bat
 ttc_console.exe
 
 # Temporary downloads
 mingw-w64.zip
 vs_buildtools.exe
 w64devkit-x64-*.exe
-vips-dev-*.zip
 
 # Build artifacts
 build/
@@ -114,3 +111,7 @@ w64devkit
 !CONTRIBUTING.md
 !MANIFEST.in
 !requirements.txt
+
+# VIPS related (removed)
+*vips*
+*VIPS*
