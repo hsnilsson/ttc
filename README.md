@@ -12,27 +12,44 @@ Creates composite images from test target photos (DNG or PNG) for analyzing lens
 
 The tool dramatically reduces file sizes, making it faster to flip through sequences and much easier to share comparisons with others.
 
-Just convert your test target photos to DNG first, then drop the .exe in that directory and run it.
+Just convert your test target photos to DNG first, then drop the executable in that directory and run it.
 
 Consider everything below this paragraph as vibe coded and not too much checked. Happy cropping! And just create a github issue if there are any issues. /Henrik
 
 ## Installation
 
-**Easiest (Windows):** Download `ttc.exe` from the [Releases](https://github.com/hsnilsson/ttc/releases) page. No Python required.
+**Easiest (Windows):** Download `ttc.exe` from the [Releases](https://github.com/hsnilsson/ttc/releases) page. No dependencies required.
 
-**Unix/Linux/macOS (install script):**
+**From source (C implementation):**
 
-```bash
-curl -sSL https://raw.githubusercontent.com/hsnilsson/ttc/main/install.sh | bash
-```
-
-**Windows (install script):**
+**Windows:**
 
 ```cmd
-curl -sSL https://raw.githubusercontent.com/hsnilsson/ttc/main/install.bat | cmd
+# Option 1: Visual Studio Build Tools
+build.bat
+
+# Option 2: MinGW-w64
+# Install MinGW-w64 and VIPS, then:
+gcc -O2 -I"C:\vips\include" ttc.c -o ttc.exe -L"C:\vips\lib" -lvips -lglib-2.0
 ```
 
-**From source:**
+**Linux/macOS:**
+
+```bash
+chmod +x build.sh
+./build.sh
+```
+
+**Manual build:**
+
+```bash
+git clone https://github.com/hsnilsson/ttc.git && cd ttc
+make install-deps  # Install VIPS dependency
+make              # Build ttc executable
+./ttc --help
+```
+
+**Legacy Python version:**
 
 ```bash
 git clone https://github.com/hsnilsson/ttc.git && cd ttc
@@ -40,11 +57,15 @@ pip install -r requirements.txt
 python ttc.py --help
 ```
 
-**Build your own .exe:** From repo root, run `python build_exe.py`. Produces `ttc.exe` (includes rawpy for full‑res DNG).
-
 ## Requirements
 
-Python 3.7+. Install deps: `pip install -r requirements.txt` (Pillow, rawpy, numpy).
+**C version:** VIPS image processing library
+
+- Windows: Download from https://github.com/libvips/libvips/releases
+- macOS: `brew install vips`
+- Linux: `sudo apt-get install libvips-dev pkg-config`
+
+**Python version (legacy):** Python 3.7+. Install deps: `pip install -r requirements.txt` (Pillow, rawpy, numpy).
 
 ## Usage
 
