@@ -111,7 +111,3 @@ w64devkit
 !CONTRIBUTING.md
 !MANIFEST.in
 !requirements.txt
-
-# VIPS related (removed)
-*vips*
-*VIPS*
