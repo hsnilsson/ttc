@@ -1,8 +1,0 @@
-#!/bin/bash
-# Bash wrapper for ttc.exe with VIPS environment
-
-# Set up VIPS environment
-export PATH="/c/vips/bin:$PATH"
-
-# Run ttc.exe
-./ttc.exe "$@"

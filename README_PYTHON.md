@@ -1,4 +1,4 @@
-# Test Target Cropper (C Version)
+# Test Target Cropper
 
 Creates composite images from test target photos (DNG or PNG) for analyzing lens performance and optical setup quality. Extracts 4 corner crops and 1 center crop stitched together for easy scrutiny and sharing.
 
@@ -10,71 +10,62 @@ Creates composite images from test target photos (DNG or PNG) for analyzing lens
 
 ## Current Status
 
-**✅ C Version:** Native performance, small executable
-**⚠️ VIPS Issues:** Currently has VIPS library linking problems
+**✅ WORKING:** Python version (fully functional)
+**❌ REMOVED:** C version (broken VIPS linking issues)
 
 ## Quick Start
 
 ```bash
-# Install VIPS library
-install-vips.bat
-
-# Build the executable
-build-w64devkit.bat
+# Install dependencies
+pip install pillow rawpy numpy
 
 # Run the tool
-ttc.exe .
+python ttc.py .
+```
+
+Or use the simple batch file:
+```bash
+run.bat
 ```
 
 ## Features
 
-- ✅ Native C performance
-- ✅ Small executable (~94KB)
-- ✅ No Python dependency
-- ⚠️ VIPS linking issues (needs debugging)
+- ✅ DNG support (full resolution via rawpy)
+- ✅ PNG support (via PIL/Pillow)
+- ✅ Composite image generation
+- ✅ Corner and center cropping
+- ✅ Cross-platform compatibility
 
 ## Requirements
 
-- Windows
-- VIPS image processing library
-- w64devkit (C compiler)
-
-## Installation
-
-1. **Install VIPS:**
-   ```cmd
-   install-vips.bat
-   ```
-
-2. **Install Compiler:**
-   ```cmd
-   install-w64devkit.bat
-   ```
-
-3. **Build:**
-   ```cmd
-   build-w64devkit.bat
-   ```
+- Python 3.7+
+- Pillow (`pip install pillow`)
+- rawpy (`pip install rawpy`)
+- numpy (`pip install numpy`)
 
 ## Usage
 
-```cmd
+```bash
 # Process current directory
-ttc.exe
+python ttc.py .
 
 # Process specific directory
-ttc.exe ../photos
+python ttc.py /path/to/photos
 
 # Custom output directory
-ttc.exe . -o results
-
-# Only process PNG files
-ttc.exe --use-pngs-only
+python ttc.py . -o results
 ```
 
-## Troubleshooting
+## Output
 
-The C version currently has VIPS library linking issues. See [DNG_COMPATIBILITY.md](DNG_COMPATIBILITY.md) for details.
+Creates a composite image with:
+- Center crop (top position)
+- Four corner crops (bottom row)
+- High resolution for pixel peeping
+
+## History
+
+The C version was attempted but had fundamental VIPS library linking issues that prevented image loading. The Python version provides complete functionality and is the recommended solution.
 
 ## License
 
