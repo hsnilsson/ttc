@@ -66,12 +66,14 @@ build-file*.bat
 build-minimal*.bat
 build-output*.bat
 build-vips*.bat
+build-test*.bat
 ttc_console.exe
 
 # Temporary downloads
 mingw-w64.zip
 vs_buildtools.exe
 w64devkit-x64-*.exe
+vips-dev-*.zip
 
 # Build artifacts
 build/
@@ -81,6 +83,10 @@ dist/
 # Test files
 test_*
 *_test.*
+debug-*
+convert-*
+create-*
+extract-*
 
 # Temporary files
 *.bak
@@ -92,3 +98,19 @@ archive/
 
 # w64devkit
 w64devkit
+
+# Large image files (should never be committed)
+*.dng
+*.png
+*.jpg
+*.jpeg
+!flow.jpg
+
+# Development artifacts
+*.txt
+!README.md
+!LICENSE
+!CHANGELOG.md
+!CONTRIBUTING.md
+!MANIFEST.in
+!requirements.txt
