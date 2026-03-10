@@ -10,8 +10,8 @@ Creates composite images from test target photos (PNG/JPG) for analyzing lens pe
 
 ## Current Status
 
-**✅ WORKING:** C version with stb_image (PNG/JPG support)
-**📦 BACKUP:** Python version (DNG support via rawpy)
+**✅ WORKING:** C version with stb_image (PNG/JPG/BMP/GIF support)
+**🔧 IN PROGRESS:** libraw integration for DNG support (code ready, compiler issue)
 
 ## Quick Start
 
@@ -28,7 +28,8 @@ ttc-simple.exe .
 - ✅ Native C performance
 - ✅ Small executable (~50KB)
 - ✅ No external dependencies (stb_image is header-only)
-- ✅ PNG, JPG, BMP, GIF support
+- ✅ PNG, JPG, BMP, GIF support (via stb_image)
+- 🔧 DNG support (libraw integration ready)
 - ✅ Cross-platform compatible
 
 ## Requirements
@@ -40,16 +41,20 @@ ttc-simple.exe .
 ## Installation
 
 1. **Install Compiler:**
+
    ```cmd
    install-w64devkit.bat
    ```
 
-2. **Install stb_image:**
+2. **Install Dependencies:**
+
    ```cmd
    install-stb.bat
+   install-libraw-source.bat  # For DNG support (when compiler issue resolved)
    ```
 
 3. **Build:**
+
    ```cmd
    build-simple.bat
    ```
@@ -73,6 +78,7 @@ ttc-simple.exe --use-pngs-only
 ## Output
 
 Creates a composite image with:
+
 - Center crop (top position)
 - Four corner crops (bottom row)
 - High resolution for pixel peeping
@@ -80,18 +86,21 @@ Creates a composite image with:
 ## File Formats
 
 ### C Version (ttc-simple.exe)
-- ✅ PNG, JPG, BMP, GIF, TGA, etc.
-- ❌ DNG (use Python version)
 
-### Python Version (ttc.py)
-- ✅ DNG (full resolution via rawpy)
-- ✅ PNG (via PIL/Pillow)
-- ✅ All other formats
+- ✅ PNG, JPG, BMP, GIF, TGA, etc. (via stb_image)
+- 🔧 DNG (libraw integration ready, pending compiler fix)
+
+## Current Limitations
+
+- **DNG support:** Code is implemented but requires working compiler setup
+- **Compiler:** w64devkit download issues need resolution
+- **Alternative:** TCC compiler missing POSIX directory functions
 
 ## Performance
 
 - **C version:** ~50KB executable, native performance
-- **Python version:** Requires Python runtime, larger memory usage
+- **DNG processing:** Full resolution via libraw
+- **Memory usage:** Minimal, no runtime dependencies
 
 ## License
 

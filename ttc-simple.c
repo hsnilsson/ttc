@@ -3,6 +3,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <ctype.h>
 
 #ifdef _WIN32
     #include <direct.h>
@@ -18,6 +19,15 @@
 #include "stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
+
+// Include libraw for DNG support
+#ifndef NO_LIBRAW
+#ifdef _WIN32
+    #include "C:\libraw\include\libraw\libraw.h"
+#else
+    #include <libraw/libraw.h>
+#endif
+#endif
 
 #define VERSION "1.2.0"
 
@@ -36,20 +46,110 @@ int create_output_dir(const char *path) {
     return 0;
 }
 
-// Load image using stb_image (supports PNG, JPG, BMP, etc.)
+// Check if file is DNG format
+int is_dng_file(const char *filename) {
+    if (!filename) return 0;
+    
+    const char *ext = strrchr(filename, '.');
+    if (!ext) return 0;
+    
+    // Convert to lowercase for comparison
+    char ext_lower[5];
+    for (int i = 0; i < 4 && ext[i+1]; i++) {
+        ext_lower[i] = tolower(ext[i+1]);
+        ext_lower[i+1] = '\0';
+    }
+    
+    return strcmp(ext_lower, "dng") == 0;
+}
+
+// Load image using libraw for DNG, stb_image for other formats
 Image* load_image(const char *filename) {
     Image *img = malloc(sizeof(Image));
     if (!img) return NULL;
     
-    int channels;
-    img->data = stbi_load(filename, &img->width, &img->height, &channels, 3);
-    
-    if (!img->data) {
-        free(img);
-        return NULL;
+#ifndef NO_LIBRAW
+    if (is_dng_file(filename)) {
+        // Use libraw for DNG files
+        libraw_data_t *raw = libraw_init(0);
+        if (!raw) {
+            free(img);
+            return NULL;
+        }
+        
+        if (libraw_open_file(raw, filename) != LIBRAW_SUCCESS) {
+            printf("Warning: Could not open DNG file %s with libraw\n", filename);
+            libraw_close(raw);
+            free(img);
+            return NULL;
+        }
+        
+        // Unpack the raw data
+        if (libraw_unpack(raw) != LIBRAW_SUCCESS) {
+            printf("Warning: Could not unpack DNG file %s\n", filename);
+            libraw_close(raw);
+            free(img);
+            return NULL;
+        }
+        
+        // Process the raw data to get RGB image
+        libraw_dcraw_process_t params = {
+            .output_bps = 8,
+            .use_auto_wb = 1,
+            .no_auto_bright = 1,
+            .output_color = 1, // sRGB
+            .user_flip = 0,
+            .user_black = 0,
+            .user_sat = 0,
+            .median_filter = 0,
+            .highlight = 0,
+            .use_camera_matrix = 1,
+            .output_tiff = 0,
+            .user_qual = 0,
+            .user_black = 0,
+            .user_sat = 0
+        };
+        
+        if (libraw_dcraw_process(raw, &params) != LIBRAW_SUCCESS) {
+            printf("Warning: Could not process DNG file %s\n", filename);
+            libraw_close(raw);
+            free(img);
+            return NULL;
+        }
+        
+        // Get the processed image data
+        img->width = raw->sizes.width;
+        img->height = raw->sizes.height;
+        img->data = malloc(img->width * img->height * 3);
+        
+        if (!img->data) {
+            libraw_close(raw);
+            free(img);
+            return NULL;
+        }
+        
+        // Copy processed RGB data
+        memcpy(img->data, raw->rawdata.color.image, img->width * img->height * 3);
+        
+        libraw_close(raw);
+        printf("Loaded DNG: %dx%d\n", img->width, img->height);
+        return img;
+        
+    } else {
+#endif // NO_LIBRAW
+        // Use stb_image for other formats (PNG, JPG, BMP, etc.)
+        int channels;
+        img->data = stbi_load(filename, &img->width, &img->height, &channels, 3);
+        
+        if (!img->data) {
+            free(img);
+            return NULL;
+        }
+        
+        return img;
+#ifndef NO_LIBRAW
     }
-    
-    return img;
+#endif
 }
 
 void free_image(Image *img) {
@@ -277,7 +377,7 @@ int main(int argc, char *argv[]) {
         if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
             printf("Usage: ttc-simple [INPUT_DIR] [OPTIONS]\n\n");
             printf("Arguments:\n");
-            printf("  INPUT_DIR    Directory containing PNG/JPG files (default: current directory)\n\n");
+            printf("  INPUT_DIR    Directory containing PNG/JPG/DNG files (default: current directory)\n\n");
             printf("Options:\n");
             printf("  -o, --output DIR        Output directory for composite images (default: INPUT_DIR/crops)\n");
             printf("  -p, --use-pngs-only     Only process PNG files; default is to prefer all formats\n");
@@ -288,8 +388,8 @@ int main(int argc, char *argv[]) {
             printf("  ttc-simple ../photos     Process parent directory\n");
             printf("  ttc-simple . -o results  Custom output directory\n");
             printf("  ttc-simple --use-pngs-only Only process PNG files\n\n");
-            printf("Note: This version uses stb_image and supports PNG, JPG, BMP, etc.\n");
-            printf("For DNG support, use the Python version or wait for libraw integration.\n");
+            printf("Note: This version supports PNG, JPG, BMP, GIF, DNG, etc.\n");
+            printf("DNG files are processed using libraw for full resolution support.\n");
             return 0;
         }
         else if (strcmp(argv[i], "--version") == 0 || strcmp(argv[i], "-v") == 0) {

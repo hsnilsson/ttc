@@ -30,17 +30,29 @@ if not exist "stb_image_write.h" (
     exit /b 1
 )
 
+REM Check for libraw
+if not exist "C:\libraw\include\libraw\libraw.h" (
+    echo ERROR: libraw not found!
+    echo Please run: install-libraw-source.bat
+    pause
+    exit /b 1
+)
+
 echo Building ttc-simple.exe...
 echo.
 
 REM Add compiler to PATH
 set PATH=%CD%\w64devkit\bin;%PATH%
 
-REM Build with stb_image (header-only, no external dependencies)
+REM Build with stb_image and libraw
 w64devkit\bin\gcc.exe -O2 ^
+    -I"C:\libraw\include" ^
+    -DLIBRAW_BUILDLIB ^
     -DWIN32 -DMINGW_HAS_SECURE_API ^
     -Wl,--subsystem,console ^
-    ttc-simple.c -o ttc-simple.exe
+    ttc-simple.c -o ttc-simple.exe ^
+    -L"C:\libraw\lib" ^
+    -lraw -lstdc++ -lws2_32
 
 if errorlevel 1 (
     echo Build failed!
@@ -59,8 +71,8 @@ if exist "ttc-simple.exe" (
     echo You can now run ttc-simple.exe to process images
     echo Example: ttc-simple.exe .  # Process current directory
     echo.
-    echo Note: This version supports PNG, JPG, BMP, GIF, etc.
-    echo For DNG files, use the Python version.
+    echo Note: This version supports PNG, JPG, BMP, GIF, DNG, etc.
+    echo DNG files are processed using libraw for full resolution support.
 )
 
 pause
