@@ -7,10 +7,10 @@ echo Building TTC with stb_image
 echo ========================================
 echo.
 
-REM Check for w64devkit
+REM Check for w64devkit compiler
 if not exist "w64devkit\bin\gcc.exe" (
     echo ERROR: w64devkit not found!
-    echo Please run: install-w64devkit.bat
+    echo Please run: download-w64devkit-7z.ps1
     pause
     exit /b 1
 )
@@ -30,21 +30,13 @@ if not exist "stb_image_write.h" (
     exit /b 1
 )
 
-REM Check for libraw
-if not exist "C:\libraw\include\libraw\libraw.h" (
-    echo ERROR: libraw not found!
-    echo Please run: install-libraw-source.bat
-    pause
-    exit /b 1
-)
-
-echo Building ttc-simple.exe...
+echo Building ttc-simple.exe with DNG support...
 echo.
 
 REM Add compiler to PATH
 set PATH=%CD%\w64devkit\bin;%PATH%
 
-REM Build with stb_image and libraw
+REM Build with w64devkit and libraw
 w64devkit\bin\gcc.exe -O2 ^
     -I"C:\libraw\include" ^
     -DLIBRAW_BUILDLIB ^

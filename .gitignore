@@ -96,9 +96,6 @@ archive/
 # w64devkit
 w64devkit/
 
-# TCC compiler
-tcc/
-
 # Executables
 *.exe
 

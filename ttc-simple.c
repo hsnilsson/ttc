@@ -2,16 +2,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <dirent.h>
 #include <ctype.h>
 
 #ifdef _WIN32
     #include <direct.h>
     #include <windows.h>
+    #include <io.h>
     #define mkdir(path, mode) _mkdir(path)
     #define PATH_SEPARATOR '\\'
+    #define S_ISREG(mode) (((mode) & _S_IFMT) == _S_IFREG)
 #else
     #include <unistd.h>
+    #include <dirent.h>
     #define PATH_SEPARATOR '/'
 #endif
 
@@ -93,24 +95,7 @@ Image* load_image(const char *filename) {
         }
         
         // Process the raw data to get RGB image
-        libraw_dcraw_process_t params = {
-            .output_bps = 8,
-            .use_auto_wb = 1,
-            .no_auto_bright = 1,
-            .output_color = 1, // sRGB
-            .user_flip = 0,
-            .user_black = 0,
-            .user_sat = 0,
-            .median_filter = 0,
-            .highlight = 0,
-            .use_camera_matrix = 1,
-            .output_tiff = 0,
-            .user_qual = 0,
-            .user_black = 0,
-            .user_sat = 0
-        };
-        
-        if (libraw_dcraw_process(raw, &params) != LIBRAW_SUCCESS) {
+        if (libraw_raw2image(raw) != LIBRAW_SUCCESS) {
             printf("Warning: Could not process DNG file %s\n", filename);
             libraw_close(raw);
             free(img);
@@ -128,8 +113,24 @@ Image* load_image(const char *filename) {
             return NULL;
         }
         
-        // Copy processed RGB data
-        memcpy(img->data, raw->rawdata.color.image, img->width * img->height * 3);
+        // Copy processed RGB data from libraw's output
+        if (raw->rawdata.color3_image) {
+            memcpy(img->data, raw->rawdata.color3_image, img->width * img->height * 3);
+        } else if (raw->rawdata.raw_image) {
+            // Fallback to raw image (will be grayscale, need to duplicate to 3 channels)
+            for (int i = 0; i < img->width * img->height; i++) {
+                unsigned short pixel = ((unsigned short*)raw->rawdata.raw_image)[i];
+                unsigned char value = pixel >> 8; // Convert 16-bit to 8-bit
+                img->data[i*3] = value;     // R
+                img->data[i*3+1] = value; // G  
+                img->data[i*3+2] = value; // B
+            }
+        } else {
+            printf("Warning: No processed image data available\n");
+            libraw_close(raw);
+            free(img);
+            return NULL;
+        }
         
         libraw_close(raw);
         printf("Loaded DNG: %dx%d\n", img->width, img->height);
@@ -295,6 +296,80 @@ void process_file(const char *filename, const char *output_dir) {
 
 // Scan directory for image files
 void scan_directory(const char *dir_path, const char *output_dir, int pngs_only) {
+#ifdef _WIN32
+    // Windows implementation
+    WIN32_FIND_DATAA findData;
+    char searchPattern[MAX_PATH];
+    snprintf(searchPattern, sizeof(searchPattern), "%s\\*", dir_path);
+    
+    HANDLE hFind = FindFirstFileA(searchPattern, &findData);
+    if (hFind == INVALID_HANDLE_VALUE) {
+        printf("Error: Could not open directory %s\n", dir_path);
+        return;
+    }
+    
+    int found_files = 0;
+    
+    printf("Searching for files in '%s'\n", dir_path);
+    
+    // First pass: count files
+    do {
+        if (!(findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+            const char *name = findData.cFileName;
+            size_t len = strlen(name);
+            
+            if (len > 4) {
+                const char *ext = name + len - 4;
+                
+                int is_dng = (strcasecmp(ext, ".dng") == 0);
+                int is_png = (strcasecmp(ext, ".png") == 0);
+                int is_jpg = (strcasecmp(ext, ".jpg") == 0) || (strcasecmp(ext, ".jpeg") == 0);
+                
+                if ((is_dng && !pngs_only) || is_png || is_jpg) {
+                    found_files++;
+                    printf("Found: %s\n", name);
+                }
+            }
+        }
+    } while (FindNextFileA(hFind, &findData));
+    
+    if (found_files == 0) {
+        printf("No image files found\n");
+        FindClose(hFind);
+        return;
+    }
+    
+    printf("Found %d image files to process\n", found_files);
+    
+    // Reset and process files
+    FindClose(hFind);
+    hFind = FindFirstFileA(searchPattern, &findData);
+    
+    do {
+        if (!(findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+            const char *name = findData.cFileName;
+            size_t len = strlen(name);
+            
+            if (len > 4) {
+                const char *ext = name + len - 4;
+                
+                int is_dng = (strcasecmp(ext, ".dng") == 0);
+                int is_png = (strcasecmp(ext, ".png") == 0);
+                int is_jpg = (strcasecmp(ext, ".jpg") == 0) || (strcasecmp(ext, ".jpeg") == 0);
+                
+                if ((is_dng && !pngs_only) || is_png || is_jpg) {
+                    char full_path[MAX_PATH];
+                    snprintf(full_path, sizeof(full_path), "%s\\%s", dir_path, name);
+                    
+                    process_file(full_path, output_dir);
+                }
+            }
+        }
+    } while (FindNextFileA(hFind, &findData));
+    
+    FindClose(hFind);
+#else
+    // POSIX implementation (original code)
     DIR *dir = opendir(dir_path);
     if (!dir) {
         printf("Error: Could not open directory %s\n", dir_path);
@@ -361,6 +436,7 @@ void scan_directory(const char *dir_path, const char *output_dir, int pngs_only)
     }
     
     closedir(dir);
+#endif
 }
 
 int main(int argc, char *argv[]) {

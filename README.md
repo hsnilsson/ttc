@@ -10,8 +10,7 @@ Creates composite images from test target photos (PNG/JPG) for analyzing lens pe
 
 ## Current Status
 
-**✅ WORKING:** C version with stb_image (PNG/JPG/BMP/GIF support)
-**🔧 IN PROGRESS:** libraw integration for DNG support (code ready, compiler issue)
+**✅ WORKING:** C version with stb_image + libraw (PNG/JPG/DNG support)
 
 ## Quick Start
 
@@ -29,13 +28,14 @@ ttc-simple.exe .
 - ✅ Small executable (~50KB)
 - ✅ No external dependencies (stb_image is header-only)
 - ✅ PNG, JPG, BMP, GIF support (via stb_image)
-- 🔧 DNG support (libraw integration ready)
+- ✅ DNG support (via libraw - full resolution)
 - ✅ Cross-platform compatible
 
 ## Requirements
 
 - Windows
-- w64devkit (C compiler)
+- w64devkit (GCC compiler)
+- libraw (for DNG support)
 - No external image libraries needed!
 
 ## Installation
@@ -43,17 +43,25 @@ ttc-simple.exe .
 1. **Install Compiler:**
 
    ```cmd
-   install-w64devkit.bat
+   download-w64devkit-7z.ps1
    ```
 
 2. **Install Dependencies:**
 
    ```cmd
    install-stb.bat
-   install-libraw-source.bat  # For DNG support (when compiler issue resolved)
+   install-libraw-source.bat
    ```
 
-3. **Build:**
+3. **Build libraw:**
+
+   ```cmd
+   cd C:\libraw
+   make -f Makefile.mingw
+   cd [back to your project directory]
+   ```
+
+4. **Build:**
 
    ```cmd
    build-simple.bat
@@ -88,13 +96,7 @@ Creates a composite image with:
 ### C Version (ttc-simple.exe)
 
 - ✅ PNG, JPG, BMP, GIF, TGA, etc. (via stb_image)
-- 🔧 DNG (libraw integration ready, pending compiler fix)
-
-## Current Limitations
-
-- **DNG support:** Code is implemented but requires working compiler setup
-- **Compiler:** w64devkit download issues need resolution
-- **Alternative:** TCC compiler missing POSIX directory functions
+- ✅ DNG (full resolution via libraw)
 
 ## Performance
 
