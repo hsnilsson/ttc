@@ -3,6 +3,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <ctype.h>
+#include <stdint.h>
 
 #ifdef _WIN32
     #include <direct.h>
@@ -24,11 +25,7 @@
 
 // Include libraw for DNG support
 #ifndef NO_LIBRAW
-#ifdef _WIN32
-    #include "C:\libraw\include\libraw\libraw.h"
-#else
-    #include <libraw/libraw.h>
-#endif
+#include <libraw/libraw.h>
 #endif
 
 #define VERSION "1.2.0"
@@ -86,52 +83,43 @@ Image* load_image(const char *filename) {
             return NULL;
         }
         
-        // Unpack the raw data
-        if (libraw_unpack(raw) != LIBRAW_SUCCESS) {
-            printf("Warning: Could not unpack DNG file %s\n", filename);
+        // Full-resolution, daylight-white-balanced sRGB, with fixed exposure.
+        // raw2image alone is NOT a rendered RGB image (nor an 8-bit buffer).
+        raw->params.half_size = 0;
+        raw->params.output_bps = 8;
+        raw->params.output_color = 1;
+        raw->params.use_camera_wb = 0;
+        raw->params.use_auto_wb = 0;
+        raw->params.no_auto_bright = 1;
+        raw->params.adjust_maximum_thr = 0.0f;
+        raw->params.bright = 1.0f;
+        int error = libraw_unpack(raw);
+        if (error == LIBRAW_SUCCESS) error = libraw_dcraw_process(raw);
+        libraw_processed_image_t *rendered = NULL;
+        if (error == LIBRAW_SUCCESS)
+            rendered = libraw_dcraw_make_mem_image(raw, &error);
+        if (!rendered || error != LIBRAW_SUCCESS ||
+            rendered->type != LIBRAW_IMAGE_BITMAP || rendered->bits != 8 ||
+            rendered->colors != 3 || !rendered->width || !rendered->height ||
+            (size_t)rendered->width * rendered->height * 3 != rendered->data_size) {
+            fprintf(stderr, "DNG rendering failed for %s: %s\n", filename,
+                    libraw_strerror(error));
+            libraw_dcraw_clear_mem(rendered);
             libraw_close(raw);
             free(img);
             return NULL;
         }
-        
-        // Process the raw data to get RGB image
-        if (libraw_raw2image(raw) != LIBRAW_SUCCESS) {
-            printf("Warning: Could not process DNG file %s\n", filename);
-            libraw_close(raw);
-            free(img);
-            return NULL;
-        }
-        
-        // Get the processed image data
-        img->width = raw->sizes.width;
-        img->height = raw->sizes.height;
-        img->data = malloc(img->width * img->height * 3);
-        
+        img->width = rendered->width;
+        img->height = rendered->height;
+        img->data = malloc(rendered->data_size);
+        if (img->data) memcpy(img->data, rendered->data, rendered->data_size);
+        libraw_dcraw_clear_mem(rendered);
         if (!img->data) {
             libraw_close(raw);
             free(img);
             return NULL;
         }
-        
-        // Copy processed RGB data from libraw's output
-        if (raw->rawdata.color3_image) {
-            memcpy(img->data, raw->rawdata.color3_image, img->width * img->height * 3);
-        } else if (raw->rawdata.raw_image) {
-            // Fallback to raw image (will be grayscale, need to duplicate to 3 channels)
-            for (int i = 0; i < img->width * img->height; i++) {
-                unsigned short pixel = ((unsigned short*)raw->rawdata.raw_image)[i];
-                unsigned char value = pixel >> 8; // Convert 16-bit to 8-bit
-                img->data[i*3] = value;     // R
-                img->data[i*3+1] = value; // G  
-                img->data[i*3+2] = value; // B
-            }
-        } else {
-            printf("Warning: No processed image data available\n");
-            libraw_close(raw);
-            free(img);
-            return NULL;
-        }
-        
+
         libraw_close(raw);
         printf("Loaded DNG: %dx%d\n", img->width, img->height);
         return img;
@@ -505,3 +493,5 @@ int main(int argc, char *argv[]) {
     
     return 0;
 }
+
+
