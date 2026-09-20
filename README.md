@@ -1,109 +1,66 @@
-# Test Target Cropper (C Version)
+# Test Target Cropper (native C)
 
-Creates composite images from test target photos (PNG/JPG) for analyzing lens performance and optical setup quality. Extracts 4 corner crops and 1 center crop stitched together for easy scrutiny and sharing.
+Create a lossless PNG composite containing a center crop and four corner crops
+for comparing lens sharpness and film/sensor flatness. Source pixels are copied
+at 1:1 resolution; there is no resizing or JPEG recompression.
 
-### Why use a test target like Vlads test targets?
+## Windows build
 
-- **Film flatness & optical quality:** Quickly assess how flat your film or sensor sits in the camera by comparing corner to center sharpness
-- **Maximum resolution testing:** Measure the actual achievable resolution (lp/mm) of your complete setup—camera, lens, scanner, and film handling combined
-- **F-stop optimization:** Easily compare multiple shots taken at different apertures side-by-side, making it simple to find the f-stop that gives your preferred balance of sharpness between corners and center
+Run `build-simple.bat`, or from PowerShell:
 
-## Current Status
-
-**✅ WORKING:** C version with stb_image + libraw (PNG/JPG/DNG support)
-
-## Quick Start
-
-```bash
-# Build the C version
-build-simple.bat
-
-# Run the tool
-ttc-simple.exe .
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build-windows.ps1
+.\build\ttc-simple.exe 'D:\photos' -o .\output
 ```
 
-## Features
+The build script downloads checksum-pinned portable tools and source dependencies
+into ignored `build/`, builds static libraries, and creates `build/ttc-simple.exe`.
+It does not install system software or require `C:\libraw`. The first build needs
+network access and disk space for the compiler. Subsequent builds reuse downloads.
+The executable uses Windows system DLLs; no separately installed LibRaw or
+libdeflate DLL is required. Keep the generated dependency license notices when
+redistributing it. See [benchmark report](BENCHMARKS.md) for measured performance
+and [test instructions](tests/README.md) for reproduction.
 
-- ✅ Native C performance
-- ✅ Small executable (~50KB)
-- ✅ No external dependencies (stb_image is header-only)
-- ✅ PNG, JPG, BMP, GIF support (via stb_image)
-- ✅ DNG support (via libraw - full resolution)
-- ✅ Cross-platform compatible
+PNG encoding uses libdeflate with adaptive PNG filtering. This changes compression
+bytes and file size, not decoded pixel values. A manual build without
+`TTC_LIBDEFLATE` falls back to the original stb encoder.
 
-## Requirements
+## DNG rendering
 
-- Windows
-- w64devkit (GCC compiler)
-- libraw (for DNG support)
-- No external image libraries needed!
+DNGs go through LibRaw unpacking, processing and RGB bitmap export at full
+resolution. Embedded previews and half-size decoding are never substituted.
+Rendering uses daylight white balance, sRGB primaries, LibRaw's default gamma
+curve/demosaic quality, fixed brightness, and metadata orientation. Automatic
+white balance, automatic brightness and content-dependent white-level adjustment
+are disabled so target brightness does not drive per-shot normalization.
+Daylight WB may differ visibly from the camera's selected WB. Camera metadata
+and calibration still affect rendering; this is RGB8 analysis output, not a
+linear scientific RAW export or a color-managed reproduction workflow.
 
-## Installation
+Earlier native code copied 16-bit RAW bytes as RGB8 without proper processing.
+Its output was invalid and cannot serve as a color or performance reference.
+The corrected output intentionally differs from that version.
 
-1. **Install Compiler:**
-
-   ```cmd
-   download-w64devkit-7z.ps1
-   ```
-
-2. **Install Dependencies:**
-
-   ```cmd
-   install-stb.bat
-   install-libraw-source.bat
-   ```
-
-3. **Build libraw:**
-
-   ```cmd
-   cd C:\libraw
-   make -f Makefile.mingw
-   cd [back to your project directory]
-   ```
-
-4. **Build:**
-
-   ```cmd
-   build-simple.bat
-   ```
+Processing is sequential across files. A 244 MP DNG still requires several GB of
+RAM during rendering. Decoded dimensions reflect LibRaw's active image and camera
+orientation, not necessarily the entire sensor storage rectangle or DNG DefaultCrop.
 
 ## Usage
 
-```cmd
-# Process current directory
-ttc-simple.exe
-
-# Process specific directory
-ttc-simple.exe ../photos
-
-# Custom output directory
-ttc-simple.exe . -o results
-
-# Only process PNG files
-ttc-simple.exe --use-pngs-only
+```powershell
+.\build\ttc-simple.exe                 # Current directory
+.\build\ttc-simple.exe 'D:\photos'     # Directory of PNG/JPG/DNG files
+.\build\ttc-simple.exe . -o results    # Existing parent, create output directory
 ```
 
-## Output
-
-Creates a composite image with:
-
-- Center crop (top position)
-- Four corner crops (bottom row)
-- High resolution for pixel peeping
-
-## File Formats
-
-### C Version (ttc-simple.exe)
-
-- ✅ PNG, JPG, BMP, GIF, TGA, etc. (via stb_image)
-- ✅ DNG (full resolution via libraw)
-
-## Performance
-
-- **C version:** ~50KB executable, native performance
-- **DNG processing:** Full resolution via libraw
-- **Memory usage:** Minimal, no runtime dependencies
+The output is a square canvas: center at the top, left/right corner pairs in
+two rows below it, black padding in unused areas. The layout and crop coordinates
+are unchanged by the performance work. Files are read from the selected directory,
+not recursively. The legacy command-line scanner has narrower format support
+than the underlying stb loader; use `.png`, `.jpg` or `.dng` inputs.
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+TTC is MIT licensed; see [LICENSE](LICENSE). Dependencies retain their own
+licenses. Build sources and generated binaries are excluded from Git.

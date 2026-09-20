@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 #include <ctype.h>
 #include <stdint.h>
+#include <limits.h>
 
 #ifdef _WIN32
     #include <direct.h>
@@ -11,7 +12,9 @@
     #include <io.h>
     #define mkdir(path, mode) _mkdir(path)
     #define PATH_SEPARATOR '\\'
+    #ifndef S_ISREG
     #define S_ISREG(mode) (((mode) & _S_IFMT) == _S_IFREG)
+    #endif
 #else
     #include <unistd.h>
     #include <dirent.h>
@@ -20,6 +23,26 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#ifdef TTC_LIBDEFLATE
+#include <libdeflate.h>
+// stb accepts a malloc-owned zlib stream. Keep filtering and pixels unchanged.
+static unsigned char *ttc_zlib_compress(unsigned char *data, int length,
+                                      int *out_length, int quality) {
+    (void)quality;
+    if (length < 0) return NULL;
+    struct libdeflate_compressor *compressor = libdeflate_alloc_compressor(6);
+    if (!compressor) return NULL;
+    size_t capacity = libdeflate_zlib_compress_bound(compressor, (size_t)length);
+    unsigned char *output = capacity <= INT_MAX ? malloc(capacity) : NULL;
+    size_t written = output ? libdeflate_zlib_compress(compressor, data,
+                                   (size_t)length, output, capacity) : 0;
+    libdeflate_free_compressor(compressor);
+    if (!written) { free(output); return NULL; }
+    *out_length = (int)written;
+    return output;
+}
+#define STBIW_ZLIB_COMPRESS ttc_zlib_compress
+#endif
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
@@ -34,6 +57,7 @@ typedef struct {
     int width;
     int height;
     unsigned char *data;
+    void *allocation; // Optional owning block when data is an interior pointer.
 } Image;
 
 // Create output directory
@@ -53,9 +77,9 @@ int is_dng_file(const char *filename) {
     if (!ext) return 0;
     
     // Convert to lowercase for comparison
-    char ext_lower[5];
+    char ext_lower[5] = {0};
     for (int i = 0; i < 4 && ext[i+1]; i++) {
-        ext_lower[i] = tolower(ext[i+1]);
+        ext_lower[i] = tolower((unsigned char)ext[i+1]);
         ext_lower[i+1] = '\0';
     }
     
@@ -64,7 +88,7 @@ int is_dng_file(const char *filename) {
 
 // Load image using libraw for DNG, stb_image for other formats
 Image* load_image(const char *filename) {
-    Image *img = malloc(sizeof(Image));
+    Image *img = calloc(1, sizeof(Image));
     if (!img) return NULL;
     
 #ifndef NO_LIBRAW
@@ -83,7 +107,7 @@ Image* load_image(const char *filename) {
             return NULL;
         }
         
-        // Full-resolution, daylight-white-balanced sRGB, with fixed exposure.
+        // Full resolution, daylight WB, sRGB primaries and LibRaw default gamma.
         // raw2image alone is NOT a rendered RGB image (nor an 8-bit buffer).
         raw->params.half_size = 0;
         raw->params.output_bps = 8;
@@ -111,17 +135,11 @@ Image* load_image(const char *filename) {
         }
         img->width = rendered->width;
         img->height = rendered->height;
-        img->data = malloc(rendered->data_size);
-        if (img->data) memcpy(img->data, rendered->data, rendered->data_size);
-        libraw_dcraw_clear_mem(rendered);
-        if (!img->data) {
-            libraw_close(raw);
-            free(img);
-            return NULL;
-        }
-
+        // The processed bitmap has independent ownership; no full-image copy.
+        img->data = rendered->data;
+        img->allocation = rendered;
         libraw_close(raw);
-        printf("Loaded DNG: %dx%d\n", img->width, img->height);
+        printf("Loaded DNG: %dx%d (daylight WB, sRGB primaries, LibRaw gamma, fixed brightness)\n", img->width, img->height);
         return img;
         
     } else {
@@ -143,14 +161,21 @@ Image* load_image(const char *filename) {
 
 void free_image(Image *img) {
     if (img) {
-        if (img->data) free(img->data);
+        if (img->allocation) {
+#ifndef NO_LIBRAW
+            libraw_dcraw_clear_mem((libraw_processed_image_t *)img->allocation);
+#else
+            free(img->allocation);
+#endif
+        }
+        else if (img->data) free(img->data);
         free(img);
     }
 }
 
 // Create composite image
 int create_composite(Image *source, const char *output_path) {
-    if (!source || !source->data) return -1;
+    if (!source || !source->data || source->width < 2 || source->height < 2) return -1;
     
     int width = source->width;
     int height = source->height;
@@ -164,11 +189,11 @@ int create_composite(Image *source, const char *output_path) {
     int comp_height = crop_size + corner_size * 2;
     
     // Allocate composite image
-    unsigned char *composite = malloc(comp_width * comp_height * 3);
+    unsigned char *composite = malloc((size_t)comp_width * comp_height * 3);
     if (!composite) return -1;
     
     // Initialize to black
-    memset(composite, 0, comp_width * comp_height * 3);
+    memset(composite, 0, (size_t)comp_width * comp_height * 3);
     
     // Extract and place center crop at top
     int center_x = width / 2;
@@ -176,72 +201,25 @@ int create_composite(Image *source, const char *output_path) {
     int crop_x = center_x - crop_size / 2;
     int crop_y = center_y - crop_size / 2;
     
-    // Copy center crop to top center
+    // Each crop is in bounds by construction; copy whole RGB rows.
     for (int y = 0; y < crop_size; y++) {
-        if (crop_y + y >= 0 && crop_y + y < height) {
-            for (int x = 0; x < crop_size; x++) {
-                if (crop_x + x >= 0 && crop_x + x < width) {
-                    int src_idx = ((crop_y + y) * width + (crop_x + x)) * 3;
-                    int dst_idx = ((y) * comp_width + (x + corner_size)) * 3;
-                    memcpy(&composite[dst_idx], &source->data[src_idx], 3);
-                }
-            }
-        }
+        memcpy(composite + ((size_t)y * comp_width + corner_size) * 3,
+               source->data + ((size_t)(crop_y + y) * width + crop_x) * 3,
+               (size_t)crop_size * 3);
     }
-    
-    // Copy corners to bottom area
-    // Top-left corner -> bottom-left
     for (int y = 0; y < corner_size; y++) {
-        if (y < height) {
-            for (int x = 0; x < corner_size; x++) {
-                if (x < width) {
-                    int src_idx = (y * width + x) * 3;
-                    int dst_idx = ((crop_size + y) * comp_width + x) * 3;
-                    memcpy(&composite[dst_idx], &source->data[src_idx], 3);
-                }
-            }
-        }
+        size_t top = (size_t)y * width * 3;
+        size_t bottom = (size_t)(height - corner_size + y) * width * 3;
+        size_t first = (size_t)(crop_size + y) * comp_width * 3;
+        size_t second = (size_t)(crop_size + corner_size + y) * comp_width * 3;
+        size_t right_src = (size_t)(width - corner_size) * 3;
+        size_t right_dst = (size_t)(crop_size + corner_size) * 3;
+        size_t bytes = (size_t)corner_size * 3;
+        memcpy(composite + first, source->data + top, bytes);
+        memcpy(composite + first + right_dst, source->data + top + right_src, bytes);
+        memcpy(composite + second, source->data + bottom, bytes);
+        memcpy(composite + second + right_dst, source->data + bottom + right_src, bytes);
     }
-    
-    // Top-right corner -> bottom-right
-    for (int y = 0; y < corner_size; y++) {
-        if (y < height) {
-            for (int x = 0; x < corner_size; x++) {
-                if (width - corner_size + x < width) {
-                    int src_idx = (y * width + (width - corner_size + x)) * 3;
-                    int dst_idx = ((crop_size + y) * comp_width + (crop_size + corner_size + x)) * 3;
-                    memcpy(&composite[dst_idx], &source->data[src_idx], 3);
-                }
-            }
-        }
-    }
-    
-    // Bottom-left corner -> bottom-left (second row)
-    for (int y = 0; y < corner_size; y++) {
-        if (height - corner_size + y < height) {
-            for (int x = 0; x < corner_size; x++) {
-                if (x < width) {
-                    int src_idx = ((height - corner_size + y) * width + x) * 3;
-                    int dst_idx = ((crop_size + corner_size + y) * comp_width + x) * 3;
-                    memcpy(&composite[dst_idx], &source->data[src_idx], 3);
-                }
-            }
-        }
-    }
-    
-    // Bottom-right corner -> bottom-right (second row)
-    for (int y = 0; y < corner_size; y++) {
-        if (height - corner_size + y < height) {
-            for (int x = 0; x < corner_size; x++) {
-                if (width - corner_size + x < width) {
-                    int src_idx = ((height - corner_size + y) * width + (width - corner_size + x)) * 3;
-                    int dst_idx = ((crop_size + corner_size + y) * comp_width + (crop_size + corner_size + x)) * 3;
-                    memcpy(&composite[dst_idx], &source->data[src_idx], 3);
-                }
-            }
-        }
-    }
-    
     // Save composite
     int result = stbi_write_png(output_path, comp_width, comp_height, 3, composite, comp_width * 3);
     
@@ -493,5 +471,3 @@ int main(int argc, char *argv[]) {
     
     return 0;
 }
-
-

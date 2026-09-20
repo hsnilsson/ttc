@@ -1,41 +1,15 @@
-# Contributing to Test Target Cropper (ttc)
+# Contributing
 
-First of all: **thank you**. This is a small, one‑person project and any help is welcome—bug reports, ideas, docs, code, all of it.
+Build the native Windows executable with `build-simple.bat` or
+`powershell -NoProfile -ExecutionPolicy Bypass -File .\build-windows.ps1`.
+Dependencies and generated artifacts belong in ignored `build/`.
 
-## Ways you can help
+Run the checks in [tests/README.md](tests/README.md). Decoder or performance
+changes should include full-resolution DNG verification, decoded-pixel comparison,
+and reproducible timings against a correct baseline. Avoid concurrent image
+benchmarks. Never commit test photos, dependency sources or binaries.
 
-- **Report bugs**: open a GitHub issue with:
-  - what you ran (command, sample files if possible)
-  - what you expected
-  - what actually happened (including error text and platform)
+Keep patches focused and preserve existing crop coordinates unless changing them
+is the explicit purpose of the task. Record rendering policy changes clearly.
 
-- **Suggest improvements**: open an issue for feature ideas or UX tweaks. Rough ideas are fine; we can discuss details there.
-
-- **Send pull requests**:
-  - Small, focused PRs are ideal.
-  - Draft PRs are totally welcome if you just want early feedback.
-
-## Quick dev setup
-
-```bash
-git clone https://github.com/hsnilsson/ttc.git
-cd ttc
-pip install -r requirements.txt
-python ttc.py --help
-```
-
-If you can, test your change on at least one real image set before opening a PR.
-
-## Style & expectations
-
-There are no heavy rules here:
-
-- Try to keep the code readable and roughly PEP 8‑ish.
-- Prefer clear names over cleverness.
-- If you touch behavior, a short note in `CHANGELOG.md` or `README.md` is appreciated.
-
-Don’t worry about being perfect—if something needs tweaking, we can adjust it in review.
-
-## License
-
-By contributing, you agree that your contributions will be licensed under the MIT License (same as the rest of the project).
+Contributions to this project are under its MIT license.
