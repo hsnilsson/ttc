@@ -439,7 +439,11 @@ void scan_directory(const char *dir_path, const char *output_dir, int pngs_only)
 #endif
 }
 
+#include "roi_analysis.h"
+
 int main(int argc, char *argv[]) {
+    if (argc > 1 && strcmp(argv[1], "--analyze") == 0)
+        return roi_cli(argc, argv);
     printf("Test Target Cropper %s (Simple Version)\n", VERSION);
     printf("License: MIT\n");
     printf("Author: hsnilsson\n\n");
@@ -455,6 +459,7 @@ int main(int argc, char *argv[]) {
             printf("Arguments:\n");
             printf("  INPUT_DIR    Directory containing PNG/JPG/DNG files (default: current directory)\n\n");
             printf("Options:\n");
+            printf("  --analyze CONFIG OUT [--track N] IMAGE...  Compare configured ROIs (see docs/roi-analysis.md)\n");
             printf("  -o, --output DIR        Output directory for composite images (default: INPUT_DIR/crops)\n");
             printf("  -p, --use-pngs-only     Only process PNG files; default is to prefer all formats\n");
             printf("  -h, --help              Show this help message\n");
