@@ -60,6 +60,14 @@ are unchanged by the performance work. Files are read from the selected director
 not recursively. The legacy command-line scanner has narrower format support
 than the underlying stb loader; use `.png`, `.jpg` or `.dng` inputs.
 
+## Compare a stack with reusable ROIs
+
+`ttc-simple --analyze target.roi new-results f4.dng f5.6.dng f8.dng` applies
+named pixel-coordinate regions across a stack and produces an HTML report and
+CSV with relative sharpness, contrast, clipping, and optional translation
+tracking. See [ROI analysis usage and limitations](docs/roi-analysis.md).
+These measurements are relative image-detail proxies, not calibrated lp/mm.
+
 ## License
 
 TTC is MIT licensed; see [LICENSE](LICENSE). Dependencies retain their own
