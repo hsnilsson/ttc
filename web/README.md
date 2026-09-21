@@ -1,0 +1,45 @@
+# Local comparison viewer
+
+`index.html`, `report.html`, `viewer.css` and `viewer.js` are dependency-free
+production assets. Serve `index.html` through the TTC loopback server. The live
+viewer uses `/api/session` and `/api/jobs` with the documented session token;
+it never uploads images or contacts external services. A local directory path
+is the import mechanism (there is no browser upload disguised as a picker).
+
+For an offline report, copy `report.html`, `viewer.css`, `viewer.js` into the
+ZIP root alongside crop assets, and replace the `null` text of
+`script#ttc-manifest` with the manifest JSON. Escape every `<` as `\u003c`
+before inserting JSON into HTML. `window.TTC_MANIFEST` is also supported.
+Use relative asset URLs and remove private source paths before packaging.
+The embedded manifest starts offline mode, without fetch or local storage.
+All image assets must be the actual aligned native crops at their full pixel
+dimensions. Ordinary scripts and relative images work without a file:// fetch.
+
+The same rendering code handles live and offline manifests. Backend fields
+`frames`, `groups`, `regions`, `sharpness`, and `crop_url` are adapted once at
+the boundary; processing and capture selection remain backend responsibilities.
+Offline whole-capture overrides affect only the current viewing session.
+
+Colors use a fixed fractional scale from zero to each row's highest accepted
+value; they do not stretch the observed minimum and maximum. Rejected values
+are excluded. A missing selected frame remains unranked, and unknown apertures
+remain in the edit list until corrected. `±` means repeat half-range, not a
+confidence interval. Five regions always come from one selected frame.
+
+Keyboard: Left/Right switch apertures, `[`/`]` switch repeats, with focus kept
+on explicit controls. Native form fields retain their usual keyboard behavior.
+The 100% view uses one CSS pixel per source pixel (device/browser scaling may
+still apply). Dragging, wheel zoom and zoom buttons share one pixel transform
+across all regions and captures. No thumbnails are used for detail comparison.
+
+## Verification
+
+Run `node --test web/tests/viewer.test.cjs` and `node --check web/viewer.js`.
+For explicit synthetic browser QA only, run `node web/tests/serve-fixture.cjs`
+and open `http://127.0.0.1:8766`. The fixture is never loaded by production.
+
+Browser checks completed: table row/column accessibility, ascending apertures,
+near-tie colors, five full-size crop panes, focus-region layout, repeat
+disagreement warning, whole-frame override, keyboard aperture/repeat flipping,
+and zoom retained while flipping. A real backend/DNG integration run and
+direct file:// ZIP extraction test remain required in the integrating task.
