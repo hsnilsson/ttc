@@ -176,7 +176,10 @@ class Manager:
         frames = []
         warnings = []
         for i, path in enumerate(paths):
-            metadata = native_json(self.engine, '--inspect', path)
+            try:
+                metadata = native_json(self.engine, '--inspect', path)
+            except ValueError as exc:
+                raise ValueError(f'{path.name}: {exc}') from exc
             aperture = metadata.get('aperture')
             source = 'metadata'
             if not aperture or not math.isfinite(float(aperture)) or float(aperture) < .1:
@@ -189,6 +192,11 @@ class Manager:
                                flags=['aperture-required'] if aperture is None else [],
                                width=metadata['width'], height=metadata['height'], regions=[]))
         width, height = frames[0]['width'], frames[0]['height']
+        for frame in frames:
+            if (frame['width'], frame['height']) != (width, height):
+                frame['flags'].append('dimension-mismatch')
+                frame['status'] = 'review-required'
+                warnings.append(frame['label']+': dimensions differ from reference; measurement will be rejected.')
         rois = []
         if data.get('roi_config'):
             rw, rh, rois = read_rois(data['roi_config'])
@@ -247,7 +255,7 @@ class Manager:
                 self.decode_lock.release()
                 raise ValueError('Detect or define all five ROIs before analyzing')
             job.update(status='running',error=None,cancel=False)
-            if action in ('analyze', 'detect'):
+            if action in ('analyze', 'detect', 'export'):
                 job['result'].pop('export_url', None)
             if action == 'analyze':
                 for frame in job['result']['frames']:
@@ -301,6 +309,8 @@ class Manager:
         except InterruptedError:
             with self.lock:
                 job['status'] = 'cancelled'; job['progress']['message'] = 'Cancelled'
+                if action == 'export':
+                    job['result'].pop('export_url', None)
         except Exception as exc:
             with self.lock:
                 job['status'] = 'failed'; job['error'] = str(exc)
@@ -318,7 +328,12 @@ class Manager:
     def detect(self, job):
         preview = job['dir']/'preview.png'
         if not preview.exists():
-            self.run_native(job, ['--preview', job['paths'][0], preview])
+            temporary = job['dir']/('preview-'+secrets.token_hex(4)+'.png')
+            try:
+                self.run_native(job, ['--preview', job['paths'][0], temporary])
+                temporary.replace(preview)
+            finally:
+                temporary.unlink(missing_ok=True)
         m = job['result']
         output, _ = self.run_native(job, ['--detect-preview', preview, m['width'], m['height']])
         result = json.loads(output.strip().splitlines()[-1])
@@ -370,6 +385,11 @@ class Manager:
             regroup(m, job['overrides'])
 
     def export(self, job, full_resolution=False):
+        def check_cancel():
+            with self.lock:
+                if job['cancel']:
+                    raise InterruptedError('Cancelled')
+        check_cancel()
         m = copy.deepcopy(job['result'])
         if not any(f['regions'] for f in m['frames']):
             raise ValueError('Analyze before exporting')
@@ -378,6 +398,7 @@ class Manager:
         out.mkdir(); (out/'assets').mkdir()
         prefix = f"/jobs/{job['id']}/"
         def asset(url):
+            check_cancel()
             if not url:
                 return None
             if not url.startswith(prefix):
@@ -395,6 +416,7 @@ class Manager:
                 region['crop_url'] = asset(region['crop_url'])
         if full_resolution:
             for i,frame in enumerate(m['frames']):
+                check_cancel()
                 if not frame['selected']:
                     continue
                 if len(frame['regions']) != 5 or any(r['status'] not in GOOD for r in frame['regions']):
@@ -436,11 +458,22 @@ class Manager:
                         page += '<img style="max-width:100%" src="'+r['crop_url']+'">'
         (out/'report.html').write_text(page,encoding='utf-8')
         archive = job['dir']/('share-'+serial+'.zip')
-        with zipfile.ZipFile(archive,'x',compression=zipfile.ZIP_DEFLATED,compresslevel=1) as z:
-            for path in out.rglob('*'):
-                if path.is_file():
-                    z.write(path,path.relative_to(out).as_posix())
+        try:
+            with zipfile.ZipFile(archive,'x',compression=zipfile.ZIP_DEFLATED,compresslevel=1) as z:
+                for path in out.rglob('*'):
+                    check_cancel()
+                    if path.is_file():
+                        info = zipfile.ZipInfo.from_file(path,path.relative_to(out).as_posix())
+                        info.compress_type = zipfile.ZIP_STORED if path.suffix == '.png' else zipfile.ZIP_DEFLATED
+                        with path.open('rb') as source, z.open(info,'w',force_zip64=True) as destination:
+                            while block := source.read(1024*1024):
+                                check_cancel()
+                                destination.write(block)
+        except BaseException:
+            archive.unlink(missing_ok=True)
+            raise
         with self.lock:
+            check_cancel()
             job['result']['export_url'] = f"/jobs/{job['id']}/{archive.name}"
         return archive
 
