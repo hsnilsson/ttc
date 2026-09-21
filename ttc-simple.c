@@ -486,7 +486,8 @@ static int image_export_cli(int argc,char **argv,int aligned) {
         int maxdim=im->width>im->height?im->width:im->height;
         double scale=maxdim>1600?1600.0/maxdim:1;
         Image small={(int)(im->width*scale),(int)(im->height*scale),NULL,NULL};
-        if(small.width<1)small.width=1; if(small.height<1)small.height=1;
+        if(small.width<1)small.width=1;
+        if(small.height<1)small.height=1;
         small.data=malloc((size_t)small.width*small.height*3);
         if(!small.data) {free_image(im);return 1;}
         for(int y=0;y<small.height;y++)for(int x=0;x<small.width;x++)

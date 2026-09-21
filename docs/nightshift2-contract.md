@@ -19,4 +19,3 @@ Aperture priority metadata then filename, with explicit manual corrections overr
 Service URLs /jobs/ID/run-N/... serve only generated PNGs and share ZIPs, never source paths/logs/CSV/configs. ZIP contains report.html, manifest.json, viewer.js/viewer.css and relative assets/*. No private full paths embedded. Detection uses native vlad_detector.h CLI. Manual-required detection must not silently supply coordinate presets.
 
 POST /api/browse {} opens a Windows native folder chooser and returns {input_dir:string|null}; path text entry remains supported. POST /api/shutdown {} cancels active jobs and stops service. Both require the session token. Full-resolution export skips unsupported frames with aligned_status and warnings instead of failing crop/report sharing; supported frames include aligned_url and aligned_transform {dx,dy,width,height,fill:"black"}.
-

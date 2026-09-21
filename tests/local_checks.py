@@ -7,6 +7,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest import mock
 import urllib.error
 import urllib.request
 import struct
@@ -114,6 +115,16 @@ class Checks(unittest.TestCase):
                         self.assertIn(region['crop_url'],z.namelist())
                     if frame['selected']:
                         self.assertIn(frame['aligned_url'],z.namelist())
+            archives=set(manager.jobs[jid]['dir'].glob('*.zip'))
+            copyfile=ttc.shutil.copyfile
+            def cancel_after_copy(source,destination):
+                result=copyfile(source,destination)
+                manager.jobs[jid]['cancel']=True
+                return result
+            with mock.patch.object(ttc.shutil,'copyfile',side_effect=cancel_after_copy):
+                with self.assertRaises(InterruptedError):manager.export(manager.jobs[jid])
+            self.assertEqual(set(manager.jobs[jid]['dir'].glob('*.zip')),archives)
+            manager.jobs[jid]['cancel']=False
             manager.edit(jid,dict(rois=rois))
             self.assertEqual(manager.snapshot(jid)['status'],'ready')
             self.assertTrue(all(not f['regions'] for f in manager.snapshot(jid)['result']['frames']))
@@ -134,6 +145,17 @@ class Checks(unittest.TestCase):
             self.assertEqual(manager.snapshot('abc')['status'],'cancelled')
             self.assertTrue(manager.decode_lock.acquire(blocking=False))
             manager.decode_lock.release()
+
+    def test_cancelled_preview_is_not_cached(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            manager=ttc.Manager('unused',tmp)
+            job=dict(dir=Path(tmp),paths=['source.dng'],result={})
+            def interrupted(job,args):
+                Path(args[-1]).write_bytes(b'partial png')
+                raise InterruptedError('Cancelled')
+            manager.run_native=interrupted
+            with self.assertRaises(InterruptedError):manager.detect(job)
+            self.assertFalse(list(Path(tmp).glob('preview*.png')))
 
 
 if __name__=='__main__':unittest.main()
