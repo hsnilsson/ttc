@@ -1,5 +1,13 @@
 # Decoder verification
 
+Local service checks: `python tests/local_checks.py` verifies request/path
+guards, aperture fallback, whole-capture selection and repeat spread. With
+`build/ttc-simple.exe` present it also exercises native analysis, manual edits,
+ROI invalidation, full-image export and portable ZIP assets. Build
+`tests/export_checks.c` like `tests/roi_checks.c` to check integer translations,
+black fill, extreme displacements, exclusive output creation and full-detail
+crop pixels. Python 3.10+ is required for the service checks.
+
 From the repository root in PowerShell, after `build-windows.ps1`:
 
 ```powershell

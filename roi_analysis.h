@@ -195,7 +195,7 @@ static void roi_csv(FILE *f,const char *s) {
 }
 static int roi_preview(const Image *im,const Roi *r,int dx,int dy,const char *path) {
     int w=r ? r->w : im->width, h=r ? r->h : im->height;
-    int max=r ? 320 : 1600;
+    int max=r ? (w>h?w:h) : 1600;
     double scale=w>h ? (double)max/w : (double)max/h;
     if (scale>1) scale=1;
     int ow=(int)(w*scale), oh=(int)(h*scale);
@@ -247,7 +247,7 @@ static int roi_cli(int argc,char **argv) {
     if(fclose(saved)) config_error=1;
     if(config_error) { fclose(csv); fclose(html); free(rs); return 1; }
     fputs("image,roi,status,x,y,width,height,dx,dy,correlation,peak_margin,mean_luma,rms_contrast,percentile_contrast,gradient_sharpness,sharpness_vs_reference,clipped_fraction\n",csv);
-    fputs("<!doctype html><meta charset=utf-8><title>TTC ROI comparison</title><style>body{font:16px system-ui;margin:2em;background:#f5f5f5;color:#20242a}table{border-collapse:collapse;background:white}td,th{border:1px solid #ccc;padding:.6em;text-align:left}img{max-width:320px;max-height:240px}code{white-space:pre-wrap}.overview{max-width:100%;max-height:none}small{display:block}th{position:sticky;top:0;background:#e4e9ed}</style><h1>TTC ROI comparison</h1><p>Relative detail and contrast on decoded RGB8 values. Compare the <b>same ROI</b> across frames. Higher gradient energy can also mean noise or sharpening. These are not MTF or calibrated lp/mm measurements.</p><p>First image is the reference. Coordinates are original decoded pixels; image size must match exactly. Tracking is integer translation only. Rejected tracking rows have no measurements. Inspect crops and clipping before ranking. Thumbnails use nearest-neighbor downsampling and are only location checks.</p>",html);
+    fputs("<!doctype html><meta charset=utf-8><title>TTC ROI comparison</title><style>body{font:16px system-ui;margin:2em;background:#f5f5f5;color:#20242a}table{border-collapse:collapse;background:white}td,th{border:1px solid #ccc;padding:.6em;text-align:left}img{max-width:320px;max-height:240px}code{white-space:pre-wrap}.overview{max-width:100%;max-height:none}small{display:block}th{position:sticky;top:0;background:#e4e9ed}</style><h1>TTC ROI comparison</h1><p>Relative detail and contrast on decoded RGB8 values. Compare the <b>same ROI</b> across frames. Higher gradient energy can also mean noise or sharpening. These are not MTF or calibrated lp/mm measurements.</p><p>First image is the reference. Coordinates are original decoded pixels; image size must match exactly. Tracking is integer translation only. Rejected tracking rows have no measurements. Inspect crops and clipping before ranking. ROI crops retain full decoded pixel detail; the overview alone uses nearest-neighbor downsampling.</p>",html);
     fprintf(html,"<p>TTC %s / ROI metrics v1. <a href=\"report.csv\">Download CSV</a> &middot; <a href=\"rois.conf\">Reusable ROI configuration</a></p><p>Expected size: %d &times; %d. Tracking radius: %d pixels.</p><pre>",VERSION,width,height,radius);
     for(int j=0;j<n;++j) fprintf(html,"%s: x=%d y=%d w=%d h=%d\n",rs[j].name,rs[j].x,rs[j].y,rs[j].w,rs[j].h);
     fputs("</pre><table><tr><th>Frame / ROI</th><th>Crop</th><th>Status / shift</th><th>Sharpness proxy</th><th>vs reference</th><th>RMS contrast</th><th>Mean / clipping</th></tr>",html);

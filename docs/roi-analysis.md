@@ -43,8 +43,10 @@ status, shifts, and a reference overview with named rectangle overlays.
 spreadsheet. `rois.conf` saves the validated original coordinates for reuse;
 the report identifies the ROI metric definition as v1. Files are processed one
 at a time, and only registration samples
-and reference metrics are retained between images. Small report previews use
-nearest-neighbor sampling and must not be used for judging fine detail.
+and reference metrics are retained between images. ROI PNGs retain full decoded
+pixels; the HTML sizes them down visually. Open the PNG or use the local viewer
+at 100% to inspect fine detail. The overview uses nearest-neighbor sampling and
+must not be used for judging fine detail.
 
 The sample [vlads4 configuration](../examples/vlads4-19136x12752.roi) is specific
 to the framing of the local `_DSC3982-_DSC3997.dng` sample at 19136 × 12752. It is

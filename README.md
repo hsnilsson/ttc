@@ -68,6 +68,35 @@ CSV with relative sharpness, contrast, clipping, and optional translation
 tracking. See [ROI analysis usage and limitations](docs/roi-analysis.md).
 These measurements are relative image-detail proxies, not calibrated lp/mm.
 
+## Local browser comparison and offline sharing
+
+The shared CLI/service in `local/ttc_local.py` imports aperture metadata, keeps
+all repeats, supports editable five-region analysis, and selects one complete
+capture per aperture with explicit manual overrides. It calls the same native
+decoder and measurements as the CLI. The browser binds only to 127.0.0.1;
+images stay local. With Python 3.10+ and the native engine built:
+
+```powershell
+python local/ttc_local.py serve --engine build/ttc-simple.exe
+python local/ttc_local.py analyze --input 'D:\photos' --roi target.roi --output new-comparison
+```
+
+The browser assets live in `web/`. The detector is enabled automatically by
+the Windows build when `vlad_detector.h` is present. Manual ROI configuration
+remains available. Aperture values can be corrected without decoding again;
+changing ROIs invalidates previous measurements. Only one decode runs at once.
+
+Share exports contain an offline HTML viewer, manifest, and full-detail aligned
+ROI crops for all measured repeats. Private source paths and native logs are
+excluded. Optional full-frame RGB8 export requires consistent integer shifts
+across all five regions; unsupported frames are flagged and crop exports remain
+available. Alignment does not correct rotation, scale, or subpixel motion.
+Repeat half-range is a descriptive spread, not calibrated uncertainty.
+
+See the [local API/result contract](docs/nightshift2-contract.md) and
+[portable Windows distribution](docs/local-distribution.md). The portable
+folder includes its own Python runtime; users do not need to install Python.
+
 ## License
 
 TTC is MIT licensed; see [LICENSE](LICENSE). Dependencies retain their own

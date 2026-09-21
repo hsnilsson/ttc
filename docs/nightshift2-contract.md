@@ -1,0 +1,22 @@
+# TTC local contract v1
+
+Canonical UI directory: `web/`; live entry and offline template: `web/index.html`. Offline embedding replaces null inside `<script id="ttc-manifest" type="application/json">null</script>` with JSON escaped for `<`. No remote resources. Python 3.10+ stdlib launcher `python local/ttc_local.py serve --engine build/ttc-simple.exe --workspace build/local-jobs`. Portable runtime packaging documented separately.
+
+HTTP binds 127.0.0.1 only. GET /api/session returns {token}; all POSTs require X-TTC-Token and application/json. Host must match bound 127.0.0.1:PORT; Origin, if supplied, must match. GET /api/state returns latest snapshot or null. GET /api/jobs/ID returns snapshot.
+
+POST /api/jobs {input_dir,roi_config?:path,rois?:[{id,x,y,width,height}],apertures?:{filename:number},track?:0|3..32} imports metadata without full decode. Dimensions come from native orientation-aware inspection. All native images in directory are retained (maximum 256). Files are never modified.
+
+POST /api/jobs/ID/analyze {} starts asynchronous analysis. /detect {} sequentially generates reference preview and runs native --detect-preview PREVIEW WIDTH HEIGHT. /cancel {} terminates active native process. /edit {apertures?:{frameId:number},rois?:[...],selected?:{aperture:frameId}} updates configuration. ROI edits invalidate every measurement/crop and require reanalysis; aperture and selection changes regroup without decode. Edits are blocked while running. /export {full_resolution?:boolean} starts asynchronous export; poll snapshot until complete and read result.export_url. Every action returns a job snapshot, not a download URL directly. Only one decoding/export operation runs across all jobs.
+
+Snapshot: {schema_version:1,id,status:ready|running|complete|failed|cancelled,progress:{completed,total,message},error:null|string,result:manifest}.
+
+Manifest: {schema_version:1,reference:frameId,preview_url:null|string,width,height,rois:[{id,x,y,width,height}],frames:[{id,label,aperture:null|number,aperture_source:metadata|filename|manual|unknown,repeat,selected,status,flags:[],width,height,regions:[{id,x,y,width,height,dx,dy,sharpness:null|number,contrast:null|number,uncertainty:null|number,status,crop_url:null|string}]}],groups:[{aperture,selected_frame_id,frame_ids,flags:[]}],warnings:[],export_url?:string,detection?:{status,rois,candidates,warnings}}.
+
+ROI IDs center/tl/tr/bl/br. Width/height and x/y are full oriented decoded pixels. Native configs with top_left etc map to canonical IDs. Crops retain full-resolution pixels and incorporate accepted integer ROI shifts. Different regions may have different shifts. Full-image export requires all five accepted regions to agree on exactly the same integer displacement; disagreement skips that full image with an explicit warning while retaining crop/report export. Full-image output samples source(x+dx,y+dy), fills uncovered edges black, keeps dimensions and RGB8 rendering. It does not correct rotation, scale, or subpixel motion.
+
+Aperture priority metadata then filename, with explicit manual corrections overriding either. Unknowns are preserved and flagged for correction. Groups sorted numeric ascending. One WHOLE capture selected per group, all repeats retained. Automatic selection requires five valid regions and maximizes weakest per-region ratio to group maxima; clipped warnings remain visible. Repeat disagreement >8% range/mean flagged, possible-shake flag is only a heuristic when weakest normalized score <0.9. `uncertainty` means repeat half-range, not a confidence interval or calibrated measurement uncertainty; null for fewer than two usable repeats. Compare sharpness ONLY within the same region, never across target patterns.
+
+Service URLs /jobs/ID/run-N/... serve only generated PNGs and share ZIPs, never source paths/logs/CSV/configs. ZIP contains report.html, manifest.json, viewer.js/viewer.css and relative assets/*. No private full paths embedded. Detection uses native vlad_detector.h CLI. Manual-required detection must not silently supply coordinate presets.
+
+POST /api/browse {} opens a Windows native folder chooser and returns {input_dir:string|null}; path text entry remains supported. POST /api/shutdown {} cancels active jobs and stops service. Both require the session token. Full-resolution export skips unsupported frames with aligned_status and warnings instead of failing crop/report sharing; supported frames include aligned_url and aligned_transform {dx,dy,width,height,fill:"black"}.
+

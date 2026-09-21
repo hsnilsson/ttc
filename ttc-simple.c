@@ -5,6 +5,7 @@
 #include <ctype.h>
 #include <stdint.h>
 #include <limits.h>
+#include <fcntl.h>
 
 #ifdef _WIN32
     #include <direct.h>
@@ -406,8 +407,106 @@ void scan_directory(const char *dir_path, const char *output_dir, int pngs_only)
 }
 
 #include "roi_analysis.h"
+#ifdef TTC_VLAD_DETECTOR
+#include "vlad_detector.h"
+#endif
+
+/* New-file output is exclusive so even an input/output alias cannot destroy
+ * originals. The callback also records late disk-full/write failures. */
+typedef struct { FILE *file; int failed; } PngSink;
+static void png_sink(void *context, void *data, int size) {
+    PngSink *sink = context;
+    if (fwrite(data, 1, (size_t)size, sink->file) != (size_t)size) sink->failed = 1;
+}
+static int write_new_png(const char *path, const Image *im) {
+#ifdef _WIN32
+    int fd = _open(path, _O_WRONLY | _O_CREAT | _O_EXCL | _O_BINARY, _S_IREAD | _S_IWRITE);
+#else
+    int fd = open(path, O_WRONLY | O_CREAT | O_EXCL, 0600);
+#endif
+    if (fd < 0) { fprintf(stderr, "Cannot create new output: %s\n", path); return 0; }
+    FILE *f = fdopen(fd, "wb");
+    if (!f) { close(fd); remove(path); return 0; }
+    PngSink sink = {f, 0};
+    int ok = stbi_write_png_to_func(png_sink, &sink, im->width, im->height, 3, im->data, im->width*3);
+    if (fclose(f)) sink.failed = 1;
+    if (!ok || sink.failed) { remove(path); return 0; }
+    return 1;
+}
+static int inspect_cli(int argc, char **argv) {
+    if (argc != 3) return 1;
+    int w=0,h=0,channels=0; double aperture=0;
+#ifndef NO_LIBRAW
+    if (is_dng_file(argv[2])) {
+        libraw_data_t *raw = libraw_init(0);
+        if (!raw) return 1;
+        int error=libraw_open_file(raw,argv[2]);
+        if (!error) error=libraw_adjust_sizes_info_only(raw);
+        if (error) { fprintf(stderr,"Inspect failed: %s\n",libraw_strerror(error)); libraw_close(raw); return 1; }
+        w=raw->sizes.iwidth; h=raw->sizes.iheight;
+        aperture=raw->other.aperture;
+        libraw_close(raw);
+    } else
+#endif
+    if (!stbi_info(argv[2],&w,&h,&channels)) { fprintf(stderr,"Inspect failed\n"); return 1; }
+    printf("{\"width\":%d,\"height\":%d,\"aperture\":",w,h);
+    if (isfinite(aperture) && aperture>0) printf("%.6g",aperture); else printf("null");
+    printf("}\n"); return 0;
+}
+/* The displacement has the same sign as ROI tracking: destination(x,y)
+ * samples source(x+dx,y+dy). Integer copying retains every decoded RGB value. */
+static void translate_image(Image *im,int dx,int dy) {
+    int w=im->width,h=im->height;
+    int start=dy>=0?0:h-1, end=dy>=0?h:-1, step=dy>=0?1:-1;
+    for (int y=start;y!=end;y+=step) {
+        unsigned char *out=im->data+(size_t)y*w*3;
+        long long sy=(long long)y+dy;
+        if (sy<0 || sy>=h || dx<=-w || dx>=w) { memset(out,0,(size_t)w*3); continue; }
+        int left=dx<0?-dx:0, count=w-(dx<0?-dx:dx);
+        memmove(out+(size_t)left*3,im->data+((size_t)sy*w+left+dx)*3,(size_t)count*3);
+        memset(out,0,(size_t)left*3);
+        memset(out+(size_t)(left+count)*3,0,(size_t)(w-left-count)*3);
+    }
+}
+static int image_export_cli(int argc,char **argv,int aligned) {
+    if (argc!=(aligned?6:4)) { fprintf(stderr,"Usage: --preview IMAGE NEW_PNG | --export-aligned IMAGE NEW_PNG DX DY\n"); return 1; }
+    int dx=0,dy=0;
+    if (aligned) {
+        char *end; errno=0; long x=strtol(argv[4],&end,10);
+        if (errno || !*argv[4] || *end || x<INT_MIN || x>INT_MAX) return 1;
+        errno=0; long y=strtol(argv[5],&end,10);
+        if (errno || !*argv[5] || *end || y<INT_MIN || y>INT_MAX) return 1;
+        dx=(int)x;dy=(int)y;
+    }
+    struct stat st; if (!stat(argv[3],&st)) { fprintf(stderr,"Output already exists\n"); return 1; }
+    Image *im=load_image(argv[2]); if (!im) return 1;
+    int ok;
+    if (aligned) { translate_image(im,dx,dy); ok=write_new_png(argv[3],im); }
+    else {
+        int maxdim=im->width>im->height?im->width:im->height;
+        double scale=maxdim>1600?1600.0/maxdim:1;
+        Image small={(int)(im->width*scale),(int)(im->height*scale),NULL,NULL};
+        if(small.width<1)small.width=1; if(small.height<1)small.height=1;
+        small.data=malloc((size_t)small.width*small.height*3);
+        if(!small.data) {free_image(im);return 1;}
+        for(int y=0;y<small.height;y++)for(int x=0;x<small.width;x++)
+            memcpy(small.data+((size_t)y*small.width+x)*3,im->data+((size_t)((long long)y*im->height/small.height)*im->width+(long long)x*im->width/small.width)*3,3);
+        ok=write_new_png(argv[3],&small);free(small.data);
+    }
+    free_image(im);return ok?0:1;
+}
 
 int main(int argc, char *argv[]) {
+#ifdef TTC_VLAD_DETECTOR
+    if (argc > 1 && strcmp(argv[1], "--detect-preview") == 0) return vlad_detect_cli(argc,argv);
+#else
+    if (argc > 1 && strcmp(argv[1], "--detect-preview") == 0) {
+        fprintf(stderr,"Target detector not included in this build. Supply five manual ROIs.\n"); return 1;
+    }
+#endif
+    if (argc > 1 && strcmp(argv[1], "--inspect") == 0) return inspect_cli(argc,argv);
+    if (argc > 1 && strcmp(argv[1], "--preview") == 0) return image_export_cli(argc,argv,0);
+    if (argc > 1 && strcmp(argv[1], "--export-aligned") == 0) return image_export_cli(argc,argv,1);
     if (argc > 1 && strcmp(argv[1], "--analyze") == 0)
         return roi_cli(argc, argv);
     printf("Test Target Cropper %s (Simple Version)\n", VERSION);
@@ -426,6 +525,9 @@ int main(int argc, char *argv[]) {
             printf("  INPUT_DIR    Directory containing PNG/JPG/DNG files (default: current directory)\n\n");
             printf("Options:\n");
             printf("  --analyze CONFIG OUT [--track N] IMAGE...  Compare configured ROIs (see docs/roi-analysis.md)\n");
+            printf("  --inspect IMAGE           JSON dimensions and aperture (no full decode)\n");
+            printf("  --preview IMAGE NEW_PNG   Overview, maximum dimension 1600\n");
+            printf("  --export-aligned IMAGE NEW_PNG DX DY  Full RGB8; samples source(x+dx,y+dy)\n");
             printf("  -o, --output DIR        Output directory for composite images (default: INPUT_DIR/crops)\n");
             printf("  -p, --use-pngs-only     Only process PNG files; default is to prefer all formats\n");
             printf("  -h, --help              Show this help message\n");

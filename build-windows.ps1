@@ -112,6 +112,9 @@ try {
         if (!(Test-Path -LiteralPath $library)) { throw "Missing static library: $library" }
     }
     $executable = Join-Path $buildRoot 'ttc-simple.exe'
+    if (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'vlad_detector.h')) {
+        $linkFlags += '-DTTC_VLAD_DETECTOR'
+    }
     $arguments = @('-std=c99', '-O2', '-fno-strict-aliasing', '-static',
         '-DTTC_LIBDEFLATE', "-I$rawRoot", "-I$deflateRoot",
         (Join-Path $PSScriptRoot 'ttc-simple.c'), '-o', $executable,
