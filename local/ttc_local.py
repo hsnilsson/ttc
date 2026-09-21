@@ -537,6 +537,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header('Content-Length',str(file.stat().st_size))
                 self.send_header('X-Content-Type-Options','nosniff'); self.send_header('Cache-Control','no-store')
                 self.end_headers(); shutil.copyfileobj(source,self.wfile)
+        except (ConnectionError,TimeoutError):
+            return  # Browser navigation can cancel an in-flight crop download.
         except (KeyError,FileNotFoundError):
             self.reply(404,dict(error='Not found'))
         except (ValueError,OSError):
@@ -587,6 +589,8 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 result = manager.launch(jid,action,data)
             self.reply(200,result)
+        except (ConnectionError,TimeoutError):
+            return
         except (ValueError,KeyError,TypeError,StopIteration,OSError) as exc:
             self.reply(400,dict(error=str(exc) or 'Invalid request'))
 
