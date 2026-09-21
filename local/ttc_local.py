@@ -204,10 +204,10 @@ class Manager:
                 raise ValueError('ROI configuration dimensions differ from reference')
         elif data.get('rois'):
             rois = validate_rois(data['rois'], width, height)
-        track = data.get('track', 16)
+        track = data.get('track', 32)
         if type(track) is not int or track not in [0, *range(3, 33)]:
             raise ValueError('Tracking radius must be 0 or 3..32')
-        manifest = dict(schema_version=1, reference=frames[0]['id'], preview_url=None, width=width, height=height,
+        manifest = dict(schema_version=1, reference=frames[0]['id'], preview_url=None, width=width, height=height, tracking_radius=track,
                         rois=rois, frames=frames, groups=[], warnings=warnings)
         job = dict(schema_version=1, id=jid, status='ready', progress=dict(completed=0,total=len(frames),message='Imported'),
                    error=None,result=manifest,dir=directory,paths=paths,track=track,overrides={},process=None,cancel=False,revision=0)
@@ -227,6 +227,9 @@ class Manager:
             overrides = dict(job['overrides'])
             if not isinstance(data.get('apertures', {}), dict) or not isinstance(data.get('selected', {}), dict):
                 raise ValueError('Apertures and selected must be objects')
+            track = data.get('track', job['track'])
+            if type(track) is not int or track not in [0, *range(3, 33)]:
+                raise ValueError('Tracking radius must be 0 or 3..32')
             for fid, aperture in data.get('apertures', {}).items():
                 frame = next(f for f in manifest['frames'] if f['id'] == fid)
                 frame['aperture'] = number(aperture); frame['aperture_source'] = 'manual'
@@ -238,9 +241,12 @@ class Manager:
                 overrides[str(aperture)] = fid
             if 'rois' in data:
                 manifest['rois'] = validate_rois(data['rois'], manifest['width'], manifest['height'])
+            if 'rois' in data or track != job['track']:
                 for frame in manifest['frames']:
                     frame['regions'] = []; frame['status'] = 'ready'
                 job['status'] = 'ready'
+            job['track'] = track
+            manifest['tracking_radius'] = track
             job['overrides'] = overrides
             job['result'] = manifest
             regroup(manifest, overrides); self.save(job)
@@ -599,7 +605,7 @@ def main():
     parser.add_argument('--workspace',type=Path,default=ROOT/'build'/'local-jobs')
     parser.add_argument('--input'); parser.add_argument('--roi'); parser.add_argument('--output',type=Path)
     parser.add_argument('--apertures',type=Path,help='JSON object mapping filenames to corrected f-numbers')
-    parser.add_argument('--track',type=int,default=16); parser.add_argument('--port',type=int,default=0)
+    parser.add_argument('--track',type=int,default=32); parser.add_argument('--port',type=int,default=0)
     parser.add_argument('--no-browser',action='store_true'); parser.add_argument('--full-resolution',action='store_true')
     args = parser.parse_args()
     manager = Manager(args.engine,args.workspace)

@@ -128,6 +128,9 @@ class Checks(unittest.TestCase):
             manager.edit(jid,dict(rois=rois))
             self.assertEqual(manager.snapshot(jid)['status'],'ready')
             self.assertTrue(all(not f['regions'] for f in manager.snapshot(jid)['result']['frames']))
+            manager.edit(jid,dict(track=32))
+            self.assertEqual(manager.snapshot(jid)['result']['tracking_radius'],32)
+            with self.assertRaises(ValueError):manager.edit(jid,dict(track=33))
 
     def test_cancel_terminates_native_worker(self):
         with tempfile.TemporaryDirectory() as tmp:
