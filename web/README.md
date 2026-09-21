@@ -3,8 +3,9 @@
 `index.html`, `report.html`, `viewer.css` and `viewer.js` are dependency-free
 production assets. Serve `index.html` through the TTC loopback server. The live
 viewer uses `/api/session` and `/api/jobs` with the documented session token;
-it never uploads images or contacts external services. A local directory path
-is the import mechanism (there is no browser upload disguised as a picker).
+it never uploads images or contacts external services. Import uses a local
+directory path or the server's native Windows folder chooser. No browser upload
+is involved. `?job=ID` opens an existing local job without altering another job.
 
 For an offline report, copy `report.html`, `viewer.css`, `viewer.js` into the
 ZIP root alongside crop assets, and replace the `null` text of
@@ -31,6 +32,10 @@ on explicit controls. Native form fields retain their usual keyboard behavior.
 The 100% view uses one CSS pixel per source pixel (device/browser scaling may
 still apply). Dragging, wheel zoom and zoom buttons share one pixel transform
 across all regions and captures. No thumbnails are used for detail comparison.
+Alignment is integer translation; a visible caveat explains residual motion.
+The search radius is editable (0 or 3–32 pixels) through the shared backend.
+When detection cannot accept five regions, **Define regions manually** creates
+five clearly identified draft boxes. Run remains disabled until these are saved.
 
 ## Verification
 
@@ -41,5 +46,12 @@ and open `http://127.0.0.1:8766`. The fixture is never loaded by production.
 Browser checks completed: table row/column accessibility, ascending apertures,
 near-tie colors, five full-size crop panes, focus-region layout, repeat
 disagreement warning, whole-frame override, keyboard aperture/repeat flipping,
-and zoom retained while flipping. A real backend/DNG integration run and
-direct file:// ZIP extraction test remain required in the integrating task.
+and zoom retained while flipping. Real backend/DNG checks are recorded in
+`QA.md`. Direct file:// opening and the native OS folder chooser remain manual
+QA gaps; the extracted report is tested through an authorized loopback server.
+
+Verify generated report packaging with
+`node web/tests/verify-report.cjs EXTRACTED_REPORT_DIR`. This checks embedded
+manifest equality, local asset paths, absence of private absolute source paths,
+and native PNG dimensions. Serve that directory for browser QA with
+`node web/tests/serve-report.cjs EXTRACTED_REPORT_DIR` (port 8767).

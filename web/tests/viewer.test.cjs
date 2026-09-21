@@ -1,6 +1,6 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const {color,valid,groups,normalize,escape}=require('../viewer.js');
+const {color,valid,groups,normalize,escape,apertureEdits,manualRois}=require('../viewer.js');
 test('near ties retain near-identical colors, not min-max exaggeration',()=>{
  const a=color(100,100).match(/\d+/g).map(Number),b=color(99,100).match(/\d+/g).map(Number);
  assert.ok(a.every((n,i)=>Math.abs(n-b[i])<=1));assert.equal(color(0,0),'#29343d');
@@ -22,4 +22,13 @@ test('source labels cannot inject markup',()=>assert.equal(escape('<img src=x on
 test('an aperture without a trustworthy whole capture never silently selects a repeat',()=>{
  const m=normalize({frames:[{id:'bad',aperture:4,regions:[]}],groups:[{aperture:4,selected_frame_id:null,flags:['No valid capture']}]});
  assert.equal(groups(m)[0].selectedCaptureId,null);assert.deepEqual(groups(m)[0].flags,['No valid capture']);
+});
+test('saving ROI corrections preserves untouched metadata aperture provenance',()=>{
+ const original=[{id:'a',aperture:3.5},{id:'b',aperture:null}];
+ assert.deepEqual(apertureEdits([{id:'a',aperture:3.5},{id:'b',aperture:4}],original),{b:4});
+});
+test('explicit manual fallback creates five bounded editable starting boxes',()=>{
+ const rois=manualRois(19136,12752);assert.deepEqual(rois.map(r=>r.id),['center','tl','tr','bl','br']);
+ for(const r of rois){assert.ok(r.x>=0&&r.y>=0&&r.x+r.width<=19136&&r.y+r.height<=12752);assert.ok(Number.isInteger(r.x));}
+ assert.deepEqual(manualRois(0,0),[]);
 });
