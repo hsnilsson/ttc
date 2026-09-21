@@ -46,8 +46,19 @@ All sixteen frames appeared as eight apertures (3.5, 4, 4.5, 5, 5.6, 6.3,
   source paths or remote URLs. The actual standalone report rendered correctly
   at `http://127.0.0.1:8767`, including explicit rejection warnings.
 
-The backend is performing a separate radius-32 retry with identical sources,
-ROIs and thresholds, job `5f68cf68457c8032`. Original radius-16 evidence remains.
+The separate radius-32 retry with identical sources, ROIs and thresholds,
+job `5f68cf68457c8032`, completed with **5 reference + 75 tracked** measurements
+and no rejected regions. All eight apertures have a selected whole capture.
+Original radius-16 evidence remains.
+
+The GUI rendered all forty numeric cells and repeat half-ranges, then exported
+`share-0b750264.zip`. Structural checks passed for sixteen frames, eight groups,
+and **80 native-dimension crops**, with embedded manifest equality, relative
+assets and no private source paths. The resulting standalone report was loaded
+at port 8767: verified five table body rows, eight aperture columns plus the
+region heading, and all forty numeric cells. Selected f/8 and confirmed its
+five image URLs all point to frame-0016, with natural dimensions 650×650 and
+880×880. There are no sample values in either real report.
 
 ## Failure and manual correction checks
 
