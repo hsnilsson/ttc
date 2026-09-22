@@ -74,7 +74,14 @@ The shared CLI/service in `local/ttc_local.py` imports aperture metadata, keeps
 all repeats, supports editable five-region analysis, and selects one complete
 capture per aperture with explicit manual overrides. It calls the same native
 decoder and measurements as the CLI. The browser binds only to 127.0.0.1;
-images stay local. With Python 3.10+ and the native engine built:
+images stay local.
+
+**Browse folders** opens a chooser inside TTC with drive shortcuts, parent-folder
+navigation, and supported-image counts. Choose **Use this folder**, then **Open
+folder** to import. You can also paste a folder path directly. Loading and path
+errors appear in the app; no separate Windows dialog is required.
+
+With Python 3.10+ and the native engine built:
 
 ```powershell
 python local/ttc_local.py serve --engine build/ttc-simple.exe

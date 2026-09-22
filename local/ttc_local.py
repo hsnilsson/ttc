@@ -31,6 +31,36 @@ GOOD = {'reference', 'fixed', 'tracked', 'clipping-warning'}
 CREATE_FLAGS = subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
 
 
+def browse_folders(value=None):
+    """List local folders inside the authenticated UI, without an OS dialog."""
+    if value is not None and not isinstance(value, str):
+        raise ValueError('Folder path must be a string')
+    path = Path(value.strip()).expanduser() if value and value.strip() else Path.home()
+    path = path.resolve(strict=True)
+    if not path.is_dir():
+        raise ValueError('Choose a folder, not a file')
+    folders, image_count, skipped = [], 0, 0
+    for entry in path.iterdir():
+        try:
+            if entry.is_dir():
+                folders.append(dict(name=entry.name, path=str(entry)))
+            elif entry.is_file() and entry.suffix.lower() in ('.dng', '.png', '.jpg', '.jpeg'):
+                image_count += 1
+        except OSError:
+            skipped += 1
+    folders.sort(key=lambda item: (item['name'].casefold(), item['name']))
+    roots = [dict(name='Home', path=str(Path.home()))]
+    if os.name == 'nt':
+        import ctypes
+        mask = ctypes.windll.kernel32.GetLogicalDrives()
+        roots.extend(dict(name=f'{chr(65+i)}:', path=f'{chr(65+i)}:\\')
+                     for i in range(26) if mask & (1 << i))
+    else:
+        roots.append(dict(name='Filesystem', path='/'))
+    return dict(path=str(path), parent=str(path.parent) if path.parent != path else None,
+                folders=folders, roots=roots, image_count=image_count, skipped=skipped)
+
+
 def number(value):
     if isinstance(value, bool):
         raise ValueError('Expected a finite positive aperture')
@@ -239,9 +269,10 @@ class Manager:
                 if not any(f['id'] == fid and f['aperture'] == aperture for f in manifest['frames']):
                     raise ValueError('Selected capture does not belong to that aperture')
                 overrides[str(aperture)] = fid
-            if 'rois' in data:
-                manifest['rois'] = validate_rois(data['rois'], manifest['width'], manifest['height'])
-            if 'rois' in data or track != job['track']:
+            rois = validate_rois(data['rois'], manifest['width'], manifest['height']) if 'rois' in data else manifest['rois']
+            regions_changed = rois != manifest['rois']
+            manifest['rois'] = rois
+            if regions_changed or track != job['track']:
                 for frame in manifest['frames']:
                     frame['regions'] = []; frame['status'] = 'ready'
                 job['status'] = 'ready'
@@ -565,17 +596,7 @@ class Handler(BaseHTTPRequestHandler):
                 threading.Thread(target=self.server.shutdown,daemon=True).start()
                 return
             if self.path == '/api/browse':
-                if os.name != 'nt':
-                    raise ValueError('Native folder chooser is currently available on Windows; enter a path')
-                script = ('Add-Type -AssemblyName System.Windows.Forms; '
-                          '$dialog = New-Object System.Windows.Forms.FolderBrowserDialog; '
-                          '$dialog.Description = "Select TTC source image folder"; '
-                          '$dialog.ShowNewFolderButton = $false; '
-                          'if ($dialog.ShowDialog() -eq "OK") { [Console]::Write($dialog.SelectedPath) }; '
-                          '$dialog.Dispose()')
-                chosen = subprocess.run(['powershell.exe','-NoProfile','-STA','-WindowStyle','Hidden','-Command',script],
-                                        capture_output=True,text=True,creationflags=CREATE_FLAGS)
-                return self.reply(200,dict(input_dir=chosen.stdout.strip() or None))
+                return self.reply(200,browse_folders(data.get('path')))
             if self.path == '/api/jobs':
                 return self.reply(201,manager.create(data))
             match = re.fullmatch(r'/api/jobs/([a-f0-9]{16})/(analyze|detect|edit|cancel|export)',self.path)

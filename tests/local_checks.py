@@ -20,6 +20,29 @@ ttc = importlib.util.module_from_spec(spec); spec.loader.exec_module(ttc)
 
 
 class Checks(unittest.TestCase):
+    def test_folder_browser(self):
+        with tempfile.TemporaryDirectory(prefix='TTC browse ') as tmp:
+            root=Path(tmp)
+            for name in ('zebra','Alpha','r\u00e4ksm\u00f6rg\u00e5s'):
+                (root/name).mkdir()
+            (root/'capture.DNG').write_bytes(b'')
+            (root/'other.txt').write_text('not an image')
+            result=ttc.browse_folders(str(root))
+            self.assertEqual([f['name'] for f in result['folders']],['Alpha','r\u00e4ksm\u00f6rg\u00e5s','zebra'])
+            self.assertEqual(result['image_count'],1)
+            self.assertEqual(result['parent'],str(root.parent))
+            self.assertTrue(result['roots'])
+            child=ttc.browse_folders(str(root/'Alpha'))
+            self.assertEqual(child['folders'],[])
+            self.assertEqual(child['parent'],str(root))
+            self.assertIsNone(ttc.browse_folders(root.anchor)['parent'])
+            for value in (False,12,[]):
+                with self.assertRaises(ValueError):ttc.browse_folders(value)
+            with self.assertRaises(ValueError):ttc.browse_folders(str(root/'other.txt'))
+            with self.assertRaises(OSError):ttc.browse_folders(str(root/'missing'))
+            with mock.patch.object(ttc.Path,'iterdir',side_effect=PermissionError('Access denied')):
+                with self.assertRaises(PermissionError):ttc.browse_folders(str(root))
+
     def test_apertures(self):
         self.assertEqual(ttc.aperture_from_name('capture_f5.6_repeat2.dng'),5.6)
         self.assertEqual(ttc.aperture_from_name('f8.jpg'),8)
@@ -69,6 +92,10 @@ class Checks(unittest.TestCase):
                 self.assertEqual(request('/api/session',Origin='http://evil.test'),403)
                 self.assertEqual(request('/api/jobs',b'{}',**{'Content-Type':'application/json'}),403)
                 h={'Content-Type':'application/json','X-TTC-Token':token}
+                self.assertEqual(request('/api/browse',b'{}',**{'Content-Type':'application/json'}),403)
+                self.assertEqual(request('/api/browse',json.dumps({'path':tmp}).encode(),**h),200)
+                self.assertEqual(request('/api/browse',b'{"path":false}',**h),400)
+                self.assertEqual(request('/api/browse',b'{}',Origin='http://evil.test',**h),403)
                 for body in [b'[]',b'{',b'null',b'{}',b'{"input_dir":false}']:
                     self.assertEqual(request('/api/jobs',body,**h),400)
                 self.assertEqual(request('/api/jobs',b'x'*65537,**h),400)
@@ -101,8 +128,10 @@ class Checks(unittest.TestCase):
             m=manager.snapshot(jid)['result'];self.assertEqual(len(m['frames']),4)
             self.assertIsNone(m['frames'][-1]['aperture'])
             revision=manager.jobs[jid]['revision']
-            manager.edit(jid,dict(apertures={'f0004':8},selected={'4':'f0002'}))
+            manager.edit(jid,dict(apertures={'f0004':8},selected={'4':'f0002'},rois=rois,track=0))
             self.assertEqual(manager.jobs[jid]['revision'],revision)
+            self.assertEqual(manager.snapshot(jid)['status'],'complete')
+            self.assertTrue(all(len(f['regions'])==5 for f in manager.snapshot(jid)['result']['frames']))
             self.assertEqual(manager.snapshot(jid)['result']['groups'][0]['selected_frame_id'],'f0002')
             archive=manager.export(manager.jobs[jid],True)
             with zipfile.ZipFile(archive) as z:
@@ -125,7 +154,8 @@ class Checks(unittest.TestCase):
                 with self.assertRaises(InterruptedError):manager.export(manager.jobs[jid])
             self.assertEqual(set(manager.jobs[jid]['dir'].glob('*.zip')),archives)
             manager.jobs[jid]['cancel']=False
-            manager.edit(jid,dict(rois=rois))
+            changed_rois=copy.deepcopy(rois);changed_rois[0]['x']+=1
+            manager.edit(jid,dict(rois=changed_rois))
             self.assertEqual(manager.snapshot(jid)['status'],'ready')
             self.assertTrue(all(not f['regions'] for f in manager.snapshot(jid)['result']['frames']))
             manager.edit(jid,dict(track=32))

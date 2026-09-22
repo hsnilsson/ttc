@@ -75,9 +75,50 @@ Stop local service button. No DNG was decoded by this separate check.
 
 ## Remaining manual checks
 
-Direct file:// opening of the extracted ZIP, the native Windows chooser dialog,
-and end-user browser/OS scaling have not been exercised. The plain offline
-scripts and relative images avoid file:// fetch dependence. GUI cancellation was
-not used to interrupt the expensive real run; backend process-cancellation tests
-are owned by the service task. Full-image optional export was verified by the
+Direct file:// opening of the extracted ZIP and end-user browser/OS scaling
+have not been exercised. The plain offline scripts and relative images avoid
+file:// fetch dependence. Full-image optional export was verified by the
 backend; inconsistent region translations must remain explicitly flagged.
+
+## 2026-09-22 folder-picker repair and end-to-end verification
+
+Reproduced the reported Browse folders no-op in the portable distribution at
+`d0f68c6`. The old endpoint invoked a hidden PowerShell/native chooser, gave no
+in-page feedback, and ignored subprocess failures. Replaced it with an
+authenticated in-page folder listing; no external dialog is involved.
+
+Actual browser checks against the repaired local service:
+
+- Browse Home, D:, camera scanning, vlads4; observed 16 supported images;
+  selected the folder and imported all 16 captures / eight metadata apertures.
+- Invalid path shows an error with selection disabled. Empty folder shows zero
+  images and no subfolders; import gives a visible error and usable controls.
+  Cancel and Escape retain the original selection and return focus to Browse.
+- Folder text survives view updates. Import has immediate loading feedback and
+  prevents duplicate submissions while waiting for metadata.
+- Detection produces five editable regions. Started the real DNG analysis,
+  cancelled it through the GUI, observed Cancelled, and restarted successfully.
+- Completed all sixteen full-resolution DNGs from `D:\camera scanning\vlads4`:
+  **80 rows: five reference + 75 tracked**, 40 numeric heatmap cells, eight
+  aperture columns. Center crops are 650x650, corner crops 880x880.
+- Zoom remains at 125% when changing aperture; changing the selected repeat
+  changes all five crop URLs together. Focus mode shows one region; returning
+  to the grid shows all five. Inspected the real crop viewer visually.
+- Export completed through the GUI. ZIP CRCs and manifest checked: sixteen
+  captures, eight groups, 80 present crop assets, no private absolute source
+  paths or remote URLs. No browser console errors occurred.
+- Synthetic PNG workflow covers unknown aperture, manual ROI initialization,
+  invalid ROI save and recovery. Unsaved changes block Run/export and survive
+  comparison navigation. Correcting aperture after analysis retains all
+  measurements when ROI geometry and tracking radius are unchanged.
+- Stop local service responds visibly and shuts down the isolated test service.
+
+Automated checks: `python -B tests/local_checks.py` (8 tests, including real
+native PNG analysis/export and new folder/HTTP/error cases),
+`node --test web/tests/viewer.test.cjs` (8 tests), `node --check web/viewer.js`,
+and `git diff --check` passed. The unchanged native executable SHA-256 was
+`73e5b947ad8d3ea1285543f2977616991d5ca3505a08afda23a4fc4d4414c5eb`.
+
+Isolated artifacts: `../build/qa-jobs/2f3cc454754eaaab/run-2/` and
+`../build/qa-jobs/2f3cc454754eaaab/share-451ef044.zip`, relative to this repair
+worktree's root. No original image files were modified.
