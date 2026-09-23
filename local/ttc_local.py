@@ -377,18 +377,29 @@ class Manager:
             if job['cancel']: raise InterruptedError('Cancelled')
             process = subprocess.Popen([sys.executable, '-I', '-B', str(detector), str(preview), str(m['width']), str(m['height'])],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,creationflags=CREATE_FLAGS)
             job['process'] = process
-        output, error = process.communicate(timeout=60)
-        with self.lock: job['process'] = None
+        try:
+            output, error = process.communicate(timeout=60)
+        except subprocess.TimeoutExpired:
+            process.terminate()
+            output, error = process.communicate()
+            raise TimeoutError('Feature registration timed out')
+        finally:
+            with self.lock: job['process'] = None
         if job['cancel']: raise InterruptedError('Cancelled')
         result = json.loads(output) if process.returncode == 0 else {"status":"manual-required","rois":[],"warnings":["Feature registration unavailable; manual regions required."]}
         with self.lock:
             m['preview_url'] = f"/jobs/{job['id']}/preview.png"
             m['detection'] = result
-            m['rois'] = validate_rois(result['rois'],m['width'],m['height']) if result.get('rois') else []
+            detected = validate_rois(result['rois'],m['width'],m['height']) if result.get('rois') else []
+            if detected:
+                m['rois'] = detected
+                for f in m['frames']:
+                    f['regions'] = []; f['status'] = 'ready'
+                regroup(m,job['overrides'])
+            else:
+                m['warnings'] = result.get('warnings', []) + ['Detection failed; existing saved regions and results were retained.']
+                return
             m['warnings'] = result.get('warnings', [])
-            for f in m['frames']:
-                f['regions'] = []; f['status'] = 'ready'
-            regroup(m,job['overrides'])
 
     def analyze(self, job):
         m = job['result']
