@@ -1,4 +1,4 @@
-"""TTC local-only CLI and HTTP service. Python 3.10+, standard library only."""
+"""TTC local-only CLI and HTTP service. Feature detection needs OpenCV/NumPy."""
 from __future__ import annotations
 
 import argparse

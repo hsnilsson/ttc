@@ -190,5 +190,35 @@ class Checks(unittest.TestCase):
             with self.assertRaises(InterruptedError):manager.detect(job)
             self.assertFalse(list(Path(tmp).glob('preview*.png')))
 
+    def test_failed_detection_preserves_manual_regions(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            manager=ttc.Manager('unused',tmp)
+            (Path(tmp)/'preview.png').write_bytes(b'cached')
+            result=dict(width=100,height=100,rois=[dict(id='center',x=20,y=20,width=30,height=30)],
+                        frames=[dict(regions=[dict(sharpness=42)])],groups=[dict(selected_frame_id='a')])
+            saved=copy.deepcopy(result)
+            job=dict(id='abc',dir=Path(tmp),result=result,cancel=False,process=None)
+            worker=mock.Mock(returncode=0)
+            worker.communicate.return_value=(json.dumps(dict(status='manual-required',rois=[],warnings=['uncertain'])), '')
+            with mock.patch.object(ttc.subprocess,'Popen',return_value=worker):
+                manager.detect(job)
+            for key in ('rois','frames','groups'):
+                self.assertEqual(result[key],saved[key])
+            self.assertIsNone(job['process'])
+            self.assertIn('retained',result['warnings'][-1])
+
+    def test_detector_timeout_reaps_worker(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            manager=ttc.Manager('unused',tmp)
+            (Path(tmp)/'preview.png').write_bytes(b'cached')
+            job=dict(dir=Path(tmp),result=dict(width=100,height=100),cancel=False,process=None)
+            worker=mock.Mock()
+            worker.communicate.side_effect=[ttc.subprocess.TimeoutExpired('detector',60),('', '')]
+            with mock.patch.object(ttc.subprocess,'Popen',return_value=worker):
+                with self.assertRaises(TimeoutError):manager.detect(job)
+            worker.terminate.assert_called_once()
+            self.assertEqual(worker.communicate.call_count,2)
+            self.assertIsNone(job['process'])
+
 
 if __name__=='__main__':unittest.main()

@@ -57,7 +57,16 @@ def build(runtime: Path, engine: Path, licenses: Path, output: Path, web: Path, 
         for asset in ('vlad-reference.npz',):
             if not (ROOT/'local'/asset).is_file(): raise ValueError(f'Feature detector asset missing: {asset}')
             shutil.copy2(ROOT/'local'/asset, output/'local'/asset)
-        shutil.copytree(dependencies, private/'Lib'/'site-packages', dirs_exist_ok=True)
+        shutil.copytree(dependencies, private/'Lib'/'site-packages', dirs_exist_ok=True, ignore=ignored)
+        for distribution in ('numpy-2.3.3.dist-info', 'opencv_python_headless-4.11.0.86.dist-info'):
+            notices = list((dependencies/distribution).glob('LICENSE*'))
+            if not notices:
+                raise ValueError(f'Dependency license notices missing: {distribution}')
+            destination = output/'licenses'/'python-deps'/distribution
+            destination.mkdir(parents=True)
+            for notice in notices:
+                shutil.copy2(notice, destination/notice.name)
+        shutil.copy2(ROOT/'local'/'requirements-vlad.txt', output/'licenses'/'python-deps'/'requirements-vlad.txt')
     shutil.copytree(web, output/'web', ignore=ignored)
     (output/'Launch TTC.vbs').write_text('''Option Explicit
 Dim shell, fs, base, quote, command
@@ -108,17 +117,35 @@ The native decoder and private Python runtime retain their license notices.
                            capture_output=True, text=True, timeout=30)
     if check.returncode:
         raise RuntimeError(f'Packaged engine smoke test failed: {check.stderr}')
+    detector_check = '''import sys, tempfile
+from pathlib import Path
+import cv2, numpy as np
+assert cv2.__version__ == '4.11.0' and np.__version__ == '2.3.3'
+sys.path.insert(0, sys.argv[1])
+import vlad_registration as detector
+with np.load(Path(sys.argv[1])/'vlad-reference.npz') as data:
+    image=data['gray']
+with tempfile.TemporaryDirectory() as tmp:
+    preview=Path(tmp)/'test.png'
+    cv2.imwrite(str(preview), cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE))
+    result=detector.detect(preview,image.shape[0],image.shape[1])
+    assert result['status']=='accepted' and len(result['rois'])==5, result
+'''
+    check = subprocess.run([str(private/'python.exe'), '-I', '-B', '-c', detector_check,
+                            str(output/'local')], capture_output=True, text=True, timeout=60)
+    if check.returncode:
+        raise RuntimeError(f'Packaged feature detector smoke test failed: {check.stderr}')
     source = subprocess.run(['git','-c',f'safe.directory={ROOT.as_posix()}','-C',str(ROOT),'rev-parse','HEAD'],
                             capture_output=True,text=True)
     tracked = subprocess.run(['git','-c',f'safe.directory={ROOT.as_posix()}','-C',str(ROOT),'status','--porcelain','--untracked-files=no'],
                              capture_output=True,text=True)
     hashes = {path.relative_to(output).as_posix():hashlib.sha256(path.read_bytes()).hexdigest()
-              for path in [output/'local'/'ttc_local.py', output/'build'/'ttc-simple.exe', *sorted((output/'web').glob('*'))]
+              for path in [*sorted((output/'local').glob('*')), output/'build'/'ttc-simple.exe', *sorted((output/'web').glob('*'))]
               if path.is_file()}
     (output/'distribution.json').write_text(json.dumps({
         'format_version': 1, 'platform': 'windows-x64',
         'runtime': 'private CPython; license in runtime/LICENSE.txt',
-        'validation': ['isolated Python service --help', 'native engine --help'],
+        'validation': ['isolated Python service --help', 'native engine --help', 'isolated OpenCV/NumPy versions and rotated reference detection'],
         'signed': False,
         'source_commit': source.stdout.strip() if source.returncode == 0 else None,
         'tracked_source_dirty': bool(tracked.stdout.strip()) if tracked.returncode == 0 else None,

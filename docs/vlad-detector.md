@@ -1,5 +1,8 @@
 # Content-based Vlad detection and registration
 
+This documents the older native CLI. The browser service now uses the
+[rotation-aware Python/OpenCV detector](vlad-registration.md).
+
 `vlad_detector.h` is a dependency-free native detector for **the Vlad target
 variant and approximately frame-filling orientation in the local vlads4 set**.
 It recognizes the center and four corner USAF contexts; it is not a generic USAF

@@ -8,6 +8,9 @@ End users do not need a system Python installation.
 
 Build after native compilation and GUI integration, from a writable checkout:
 
+First install the pinned detector dependencies into ignored `build/python-deps`:
+`python -m pip install --target build/python-deps -r local/requirements-vlad.txt`.
+
 ```powershell
 & 'C:\Users\henri\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' local/package_windows.py `
   --runtime 'C:\Users\henri\.cache\codex-runtimes\codex-primary-runtime\dependencies\python' `
@@ -18,10 +21,12 @@ Build after native compilation and GUI integration, from a writable checkout:
 
 The output folder and optional sibling ZIP must not exist. Required GUI assets
 are checked before creating output. The builder excludes third-party
-site-packages, Python tools/tests/cache and the unused GUI toolkit; it retains
+unrelated site-packages, Python tools/tests/cache and the unused GUI toolkit; it retains
 the standard library, extension DLLs, interpreter DLLs, CRT DLLs and licenses.
 It smoke-tests the copied service with isolated Python and the copied native
-engine. A failed smoke test leaves the new folder for inspection; do not
+engine. It adds pinned OpenCV/NumPy (including their license notices), the
+compact grayscale reference and the registration module, then tests a rotated
+reference in the isolated packaged runtime. A failed smoke test leaves the new folder for inspection; do not
 distribute that folder. Use a fresh output path after correcting the failure.
 
 Extract the entire ZIP. `Launch TTC.vbs` uses the included `pythonw.exe` to
@@ -36,7 +41,8 @@ automatic updates, clean-machine Windows testing, and cross-platform packaging
 are not provided. Windows may show reputation warnings; organizational policy
 may disable VBScript, in which case use `ttc.cmd serve`. Closing the browser
 does not terminate the hidden service; use the UI's Stop service action
-(POST /api/shutdown) or the console launcher for clean shutdown. No input images,
+(POST /api/shutdown) or the console launcher for clean shutdown. Apart from the
+documented grayscale detector reference, no input images,
 private job paths, cached user sessions, or generated reports are bundled.
 
 Retain the included notices when redistributing. Native library source
