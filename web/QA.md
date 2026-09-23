@@ -122,3 +122,27 @@ and `git diff --check` passed. The unchanged native executable SHA-256 was
 Isolated artifacts: `../build/qa-jobs/2f3cc454754eaaab/run-2/` and
 `../build/qa-jobs/2f3cc454754eaaab/share-451ef044.zip`, relative to this repair
 worktree's root. No original image files were modified.
+
+## 2026-09-23 ROI center overlay QA
+
+Compared the supplied manually corrected target screenshot with a dedicated,
+local synthetic API fixture. The viewer now describes the five centers as the
+small lp/mm / USAF measurement squares, rather than implying that the opaque
+label identifies a measured pixel. Each rectangle has a white crosshair and
+center dot; labels are placed outward by region (center/right, then outward
+from each corner) and have `pointer-events: none`.
+
+- Browser geometry check at the normal viewport: five ROI boxes and five
+  crosshairs; every crosshair center matched its rectangle center exactly and
+  none of the five labels intersected its own rectangle.
+- Repeated that geometry check at a 390 px viewport: all labels stayed outside
+  and all crosshairs remained centered.
+- Edited the center x coordinate to 333: Run became disabled with the explicit
+  unsaved-corrections warning. Saving through the local API retained 333 and
+  re-enabled Run. This confirms manual corrections are a draft until the
+  explicit save action, rather than a polling/view refresh overwrite.
+
+Automated checks: `node --test web/tests/viewer.test.cjs` (9 tests),
+`node --check web/viewer.js`, and `git diff --check` passed. The two browser
+fixtures are local-only and use a synthetic SVG preview; no source image pixels
+were changed.

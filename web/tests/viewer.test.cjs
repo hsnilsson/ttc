@@ -1,6 +1,6 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const {color,valid,groups,normalize,escape,apertureEdits,manualRois}=require('../viewer.js');
+const {color,valid,groups,normalize,escape,apertureEdits,manualRois,roiLabelClass}=require('../viewer.js');
 test('near ties retain near-identical colors, not min-max exaggeration',()=>{
  const a=color(100,100).match(/\d+/g).map(Number),b=color(99,100).match(/\d+/g).map(Number);
  assert.ok(a.every((n,i)=>Math.abs(n-b[i])<=1));assert.equal(color(0,0),'#29343d');
@@ -31,4 +31,10 @@ test('explicit manual fallback creates five bounded editable starting boxes',()=
  const rois=manualRois(19136,12752);assert.deepEqual(rois.map(r=>r.id),['center','tl','tr','bl','br']);
  for(const r of rois){assert.ok(r.x>=0&&r.y>=0&&r.x+r.width<=19136&&r.y+r.height<=12752);assert.ok(Number.isInteger(r.x));}
  assert.deepEqual(manualRois(0,0),[]);
+});
+test('every region label has a dedicated outside-overlay position class',()=>{
+ assert.deepEqual(['center','tl','tr','bl','br'].map(roiLabelClass),[
+  'roi-label roi-label-center','roi-label roi-label-tl','roi-label roi-label-tr','roi-label roi-label-bl','roi-label roi-label-br'
+ ]);
+ assert.equal(roiLabelClass('unexpected'),'roi-label roi-label-other');
 });

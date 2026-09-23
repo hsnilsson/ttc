@@ -36,6 +36,9 @@ Alignment is integer translation; a visible caveat explains residual motion.
 The search radius is editable (0 or 3–32 pixels) through the shared backend.
 When detection cannot accept five regions, **Define regions manually** creates
 five clearly identified draft boxes. Run remains disabled until these are saved.
+The target overlay marks the center of each small lp/mm / USAF measurement
+square with a crosshair and dot. Its region name is placed outside the measured
+pixels; coordinate edits and dragging remain drafts until **Save corrections**.
 
 ## Verification
 
