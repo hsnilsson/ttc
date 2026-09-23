@@ -39,6 +39,8 @@ five clearly identified draft boxes. Run remains disabled until these are saved.
 The target overlay marks the center of each small lp/mm / USAF measurement
 square with a crosshair and dot. Its region name is placed outside the measured
 pixels; coordinate edits and dragging remain drafts until **Save corrections**.
+Corner names are chart-relative (the target's upright orientation), so they do
+not claim a screen position when a scan is rotated.
 
 ## Verification
 
