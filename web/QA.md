@@ -146,3 +146,24 @@ Automated checks: `node --test web/tests/viewer.test.cjs` (9 tests),
 `node --check web/viewer.js`, and `git diff --check` passed. The two browser
 fixtures are local-only and use a synthetic SVG preview; no source image pixels
 were changed.
+
+### Supplied screenshot calibration (review aid only)
+
+The manually corrected screenshot's cyan ROI borders were registered to the
+read-only reference preview with 68 SIFT/RANSAC inliers (median reprojection
+error 0.183 preview pixels; maximum 0.600). These are **approximate screenshot
+annotations**, not a claim of physical ground truth or a replacement for
+detector validation:
+
+| Region | Preview center (1600×1066) | Source center (19136×12752) |
+| --- | ---: | ---: |
+| Center | (801.668, 436.927) | (9588, 5227) |
+| Top left | (205.475, 169.653) | (2457, 2029) |
+| Top right | (1430.853, 203.404) | (17113, 2433) |
+| Bottom left | (171.701, 866.362) | (2054, 10364) |
+| Bottom right | (1397.202, 903.097) | (16711, 10803) |
+
+In particular, the corrected top-right center is materially displaced from the
+older rectangle. A registration/homography implementation must project the
+intended center point (or the ROI's four corners), rather than take the midpoint
+of an axis-aligned transformed bounding box.
