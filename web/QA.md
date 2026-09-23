@@ -167,3 +167,19 @@ In particular, the corrected top-right center is materially displaced from the
 older rectangle. A registration/homography implementation must project the
 intended center point (or the ROI's four corners), rather than take the midpoint
 of an axis-aligned transformed bounding box.
+
+
+## 2026-09-23 heatmap and ROI controls
+
+- Loaded-row min/max colors: 100 and 101 produce distinct purple/yellow endpoints;
+  equality remains one color and invalid measurements remain unranked.
+- Browser click on the bottom-row f/5.6 value selected all five rows in that
+  column, left the focused region unchanged, and changed the aperture chooser.
+  Computed table spacing was 0px; visual inspection showed continuous blocks.
+- Coordinate edit 220 -> 333 -> undo restored 220. Reset after editing to 444
+  restored 220, and undoing reset restored 444.
+- At target zoom 150%, a 40 x 20 CSS pixel drag moved source coordinates from
+  (444,130) to (487,152); one undo restored (444,130).
+- Save established 444 as the new baseline. Editing to 555 then resetting
+  restored 444. Fit target restored 100% without modifying coordinates.
+- Ten Node tests, JavaScript syntax validation and service/export tests passed.

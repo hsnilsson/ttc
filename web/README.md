@@ -21,9 +21,12 @@ The same rendering code handles live and offline manifests. Backend fields
 the boundary; processing and capture selection remain backend responsibilities.
 Offline whole-capture overrides affect only the current viewing session.
 
-Colors use a fixed fractional scale from zero to each row's highest accepted
-value; they do not stretch the observed minimum and maximum. Rejected values
-are excluded. A missing selected frame remains unranked, and unknown apertures
+Colors stretch each row's loaded accepted minimum-to-maximum over a purple,
+teal, and yellow spectrum. Small differences use the full range; equal values
+share a neutral middle color. Rejected values are excluded. Colors indicate
+relative position, not statistical significance. Clicking a column header or
+any of its five values selects that aperture for all detail panes. The matrix
+has no cell gaps or borders; focus-region selection is a separate control. A missing selected frame remains unranked, and unknown apertures
 remain in the edit list until corrected. `±` means repeat half-range, not a
 confidence interval. Five regions always come from one selected frame.
 
@@ -60,3 +63,9 @@ Verify generated report packaging with
 manifest equality, local asset paths, absence of private absolute source paths,
 and native PNG dimensions. Serve that directory for browser QA with
 `node web/tests/serve-report.cjs EXTRACTED_REPORT_DIR` (port 8767).
+
+ROI editing supports multi-step undo and Reset ROIs to saved (or last detected
+positions before a save). Reset can itself be undone. Saving or detecting starts
+a fresh undo history. Coordinate edits update overlays immediately. Target
+zoom ranges from 100% to 800%, with scrollbars and Fit target; zoom does not
+change source coordinates. Each drag is one undo action, including when zoomed.

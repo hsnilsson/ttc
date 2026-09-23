@@ -1,9 +1,22 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const {color,valid,groups,normalize,escape,apertureEdits,manualRois,roiLabelClass}=require('../viewer.js');
-test('near ties retain near-identical colors, not min-max exaggeration',()=>{
- const a=color(100,100).match(/\d+/g).map(Number),b=color(99,100).match(/\d+/g).map(Number);
- assert.ok(a.every((n,i)=>Math.abs(n-b[i])<=1));assert.equal(color(0,0),'#29343d');
+const {color,valid,groups,normalize,escape,apertureEdits,manualRois,roiLabelClass,RoiHistory}=require('../viewer.js');
+test('loaded row range uses the full spectrum, including near ties',()=>{
+ assert.notEqual(color(99,99,100),color(100,99,100));
+ assert.equal(color(99,99,100),color(0,0,100));
+ assert.equal(color(100,99,100),color(100,0,100));
+ assert.equal(color(0,0,0),color(100,100,100));
+ assert.equal(color(NaN,0,1),'#29343d');
+ assert.notEqual(color(99.5,99,100),color(99,99,100));
+});
+test('ROI undo groups edits and reset itself can be undone without changing saved positions',()=>{
+ const original=manualRois(1600,1200),history=new RoiHistory(original);
+ const moved=history.current;moved[0].x+=30;history.push(moved);history.push(moved);
+ assert.equal(history.steps.length,2);assert.deepEqual(history.undo(),original);
+ history.push(moved);const resized=history.current;resized[1].width+=10;history.push(resized);
+ assert.deepEqual(history.reset(),original);assert.deepEqual(history.undo(),resized);
+ assert.deepEqual(history.undo(),moved);assert.deepEqual(history.undo(),original);
+ assert.deepEqual(history.baseline,original);
 });
 test('invalid and rejected measurements never get ranked',()=>{
  for(const value of [null,NaN,Infinity,-1])assert.equal(valid({value}),false);
