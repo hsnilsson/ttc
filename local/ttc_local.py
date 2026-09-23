@@ -372,8 +372,15 @@ class Manager:
             finally:
                 temporary.unlink(missing_ok=True)
         m = job['result']
-        output, _ = self.run_native(job, ['--detect-preview', preview, m['width'], m['height']])
-        result = json.loads(output.strip().splitlines()[-1])
+        detector = Path(__file__).with_name('vlad_registration.py')
+        with self.lock:
+            if job['cancel']: raise InterruptedError('Cancelled')
+            process = subprocess.Popen([sys.executable, '-I', '-B', str(detector), str(preview), str(m['width']), str(m['height'])],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,creationflags=CREATE_FLAGS)
+            job['process'] = process
+        output, error = process.communicate(timeout=60)
+        with self.lock: job['process'] = None
+        if job['cancel']: raise InterruptedError('Cancelled')
+        result = json.loads(output) if process.returncode == 0 else {"status":"manual-required","rois":[],"warnings":["Feature registration unavailable; manual regions required."]}
         with self.lock:
             m['preview_url'] = f"/jobs/{job['id']}/preview.png"
             m['detection'] = result
