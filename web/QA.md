@@ -183,3 +183,9 @@ of an axis-aligned transformed bounding box.
 - Save established 444 as the new baseline. Editing to 555 then resetting
   restored 444. Fit target restored 100% without modifying coordinates.
 - Ten Node tests, JavaScript syntax validation and service/export tests passed.
+
+## Aperture total row
+
+Eleven Node checks pass, including selected-capture-only sums, rejection of
+incomplete totals and tied winners. Browser inspection confirms the requested
+row order, a 5px gap, highest-total badge and total-row column selection.

@@ -69,3 +69,9 @@ positions before a save). Reset can itself be undone. Saving or detecting starts
 a fresh undo history. Coordinate edits update overlays immediately. Target
 zoom ranges from 100% to 800%, with scrollbars and Fit target; zoom does not
 change source coordinates. Each drag is one undo action, including when zoomed.
+
+The heatmap orders regions Top left, Top right, Center, Bottom left, Bottom right.
+A total row follows after 5 CSS pixels: raw sum of all five valid region scores
+from the selected whole capture. Missing/rejected regions leave the total unranked.
+Highest totals (including ties) are starred. This is a practical summary of the
+existing metric, not a calibrated global optical measurement.

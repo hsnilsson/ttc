@@ -1,6 +1,6 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const {color,valid,groups,normalize,escape,apertureEdits,manualRois,roiLabelClass,RoiHistory}=require('../viewer.js');
+const {TABLE_REGIONS,sharpnessTotals,color,valid,groups,normalize,escape,apertureEdits,manualRois,roiLabelClass,RoiHistory}=require('../viewer.js');
 test('loaded row range uses the full spectrum, including near ties',()=>{
  assert.notEqual(color(99,99,100),color(100,99,100));
  assert.equal(color(99,99,100),color(0,0,100));
@@ -50,4 +50,15 @@ test('every region label has a dedicated outside-overlay position class',()=>{
   'roi-label roi-label-center','roi-label roi-label-tl','roi-label roi-label-tr','roi-label roi-label-bl','roi-label roi-label-br'
  ]);
  assert.equal(roiLabelClass('unexpected'),'roi-label roi-label-other');
+});
+
+test('total uses five valid regions of the selected whole capture and marks ties',()=>{
+ const capture=(id,aperture,values)=>({id,aperture,measurements:Object.fromEntries(['center','tl','tr','bl','br'].map((r,i)=>[r,{value:values[i],status:'accepted'}]))});
+ const m={captures:[capture('a',4,[1,2,3,4,5]),capture('unused',4,[9,9,9,9,9]),capture('b',5.6,[2,2,3,4,5]),capture('c',8,[2,2,3,4,5])],apertures:[{value:4,selectedCaptureId:'a'},{value:5.6,selectedCaptureId:'b'},{value:8,selectedCaptureId:'c'}]};
+ assert.deepEqual(sharpnessTotals(m).map(t=>[t.value,t.best]),[[15,false],[16,true],[16,true]]);
+ m.captures[2].measurements.tr.status='rejected';
+ assert.equal(sharpnessTotals(m)[1].value,null);
+ m.apertures[2].selectedCaptureId=null;
+ assert.deepEqual(sharpnessTotals(m).map(t=>t.best),[true,false,false]);
+ assert.deepEqual(TABLE_REGIONS,['tl','tr','center','bl','br']);
 });
