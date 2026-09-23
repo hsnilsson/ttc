@@ -25,6 +25,7 @@ def ignored(directory, names):
 
 def build(runtime: Path, engine: Path, licenses: Path, output: Path, web: Path, revisions=()):
     runtime, engine, licenses, web = [p.resolve() for p in (runtime, engine, licenses, web)]
+    dependencies = ROOT/'build'/'python-deps'
     for path in (runtime/'python.exe', runtime/'pythonw.exe', runtime/'LICENSE.txt',
                  runtime/'Lib'/'encodings'/'__init__.py', engine,
                  ROOT/'local'/'ttc_local.py', web/'index.html', web/'viewer.js', web/'viewer.css'):
@@ -49,6 +50,14 @@ def build(runtime: Path, engine: Path, licenses: Path, output: Path, web: Path, 
     shutil.copy2(ROOT/'LICENSE', output/'licenses'/'TTC-LICENSE')
     (output/'local').mkdir()
     shutil.copy2(ROOT/'local'/'ttc_local.py', output/'local'/'ttc_local.py')
+    if (ROOT/'local'/'vlad_registration.py').is_file():
+        if not dependencies.is_dir():
+            raise ValueError('Feature detector requires build/python-deps; install local/requirements-vlad.txt there first')
+        shutil.copy2(ROOT/'local'/'vlad_registration.py', output/'local'/'vlad_registration.py')
+        for asset in ('vlad-reference.npz',):
+            if not (ROOT/'local'/asset).is_file(): raise ValueError(f'Feature detector asset missing: {asset}')
+            shutil.copy2(ROOT/'local'/asset, output/'local'/asset)
+        shutil.copytree(dependencies, private/'Lib'/'site-packages', dirs_exist_ok=True)
     shutil.copytree(web, output/'web', ignore=ignored)
     (output/'Launch TTC.vbs').write_text('''Option Explicit
 Dim shell, fs, base, quote, command

@@ -1,0 +1,3 @@
+# Deliberately installed only into ignored build/python-deps, never source control.
+numpy==2.3.3
+opencv-python-headless==4.11.0.86
