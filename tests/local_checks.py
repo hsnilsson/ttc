@@ -101,6 +101,12 @@ class Checks(unittest.TestCase):
                 self.assertEqual(request('/api/jobs',b'x'*65537,**h),400)
                 self.assertEqual(request('/../../local/ttc_local.py'),400)
                 self.assertEqual(request('/jobs/1234567890abcdef/native.log'),404)
+                self.assertEqual(request('/api/jobs',b'{"auto_run":"yes"}',**h),400)
+                with mock.patch.object(manager,'create',return_value={'id':'1234567890abcdef'}) as create, mock.patch.object(manager,'launch',return_value={'status':'running'}) as launch:
+                    self.assertEqual(request('/api/jobs',b'{"input_dir":"example","auto_run":true}',**h),201)
+                    create.assert_called_once()
+                    launch.assert_called_once_with('1234567890abcdef','automatic')
+                    self.assertEqual(request('/api/jobs/1234567890abcdef/automatic',b'{}',**h),200)
             finally:
                 server.shutdown();server.server_close();thread.join()
 
@@ -219,6 +225,26 @@ class Checks(unittest.TestCase):
             worker.terminate.assert_called_once()
             self.assertEqual(worker.communicate.call_count,2)
             self.assertIsNone(job['process'])
+
+    def test_automatic_detection_gate_and_cancellation(self):
+        for status,cancelled in [('accepted',False),('manual-required',False),('accepted',True)]:
+            with self.subTest(status=status,cancelled=cancelled), tempfile.TemporaryDirectory() as tmp:
+                manager=ttc.Manager('unused',tmp)
+                # Existing manual ROIs must not bypass failed automatic detection.
+                job=dict(result=dict(rois=[{}]*5),progress={},cancel=False)
+                def detect(j):
+                    j['result']['detection']={'status':status}
+                    j['cancel']=cancelled
+                manager.detect=mock.Mock(side_effect=detect)
+                manager.analyze=mock.Mock()
+                if cancelled:
+                    with self.assertRaises(InterruptedError):manager.automatic(job)
+                elif status!='accepted':
+                    with self.assertRaisesRegex(ValueError,'could not be verified'):manager.automatic(job)
+                else:
+                    manager.automatic(job)
+                self.assertEqual(manager.analyze.call_count,int(status=='accepted' and not cancelled))
+                manager.detect.assert_called_once_with(job)
 
 
 if __name__=='__main__':unittest.main()

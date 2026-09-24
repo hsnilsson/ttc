@@ -21,3 +21,10 @@ Service URLs /jobs/ID/run-N/... serve only generated PNGs and share ZIPs, never 
 POST /api/browse {path?:string} lists local folders for the in-page chooser and returns {path,parent:null|string,folders:[{name,path}],roots:[{name,path}],image_count,skipped}. An empty path starts at the user's home folder. Roots include Home and Windows drive letters (or the filesystem root on other platforms). Names sort case-insensitively; supported-image counts are nonrecursive. Missing, inaccessible, non-directory, and invalid path values produce visible errors. No external native dialog or PowerShell process is used. Path text entry remains supported. POST /api/shutdown {} cancels active jobs and stops service. Both require the session token. Full-resolution export skips unsupported frames with aligned_status and warnings instead of failing crop/report sharing; supported frames include aligned_url and aligned_transform {dx,dy,width,height,fill:"black"}.
 
 Tracking defaults to 32 full-resolution pixels (0 disables it; otherwise3..32). Manifest tracking_radius records this setting. /edit also accepts track; changing it invalidates measurements like ROI edits. The original real16 sample run at radius16 correctly rejected36 boundary matches; a wider search is required for the observed fixed-setup movement. Rejection thresholds are unchanged.
+
+POST /api/jobs optionally accepts `auto_run:true` to import then immediately
+launch a server-side automatic pipeline. POST /api/jobs/ID/automatic starts
+preview/detection followed by analysis on an existing loaded series. One worker
+holds the decode lock across both stages. Analysis requires accepted detection
+and exactly five validated ROIs; uncertain detection fails with instructions
+for manual correction, and cancellation never advances to analysis.

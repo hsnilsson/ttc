@@ -292,7 +292,7 @@ class Manager:
                 self.decode_lock.release()
                 raise ValueError('Detect or define all five ROIs before analyzing')
             job.update(status='running',error=None,cancel=False)
-            if action in ('analyze', 'detect', 'export'):
+            if action in ('analyze', 'detect', 'automatic', 'export'):
                 job['result'].pop('export_url', None)
             if action == 'analyze':
                 for frame in job['result']['frames']:
@@ -335,6 +335,8 @@ class Manager:
                 self.analyze(job)
             elif action == 'detect':
                 self.detect(job)
+            elif action == 'automatic':
+                self.automatic(job)
             elif action == 'export':
                 self.export(job, data.get('full_resolution', False))
             with self.lock:
@@ -361,6 +363,18 @@ class Manager:
             if job['process'] and job['process'].poll() is None:
                 job['process'].terminate()
         return self.snapshot(jid)
+
+    def automatic(self, job):
+        with self.lock:
+            job['progress'].update(completed=0, message='Finding target regions automatically…')
+        self.detect(job)
+        with self.lock:
+            if job['cancel']:
+                raise InterruptedError('Cancelled')
+            if job['result'].get('detection', {}).get('status') != 'accepted' or len(job['result']['rois']) != 5:
+                raise ValueError('Automatic comparison stopped: target regions could not be verified. Adjust and save the five regions, then Run comparison.')
+            job['progress']['message'] = 'Regions found. Measuring and aligning the image series…'
+        self.analyze(job)
 
     def detect(self, job):
         preview = job['dir']/'preview.png'
@@ -616,8 +630,14 @@ class Handler(BaseHTTPRequestHandler):
             if self.path == '/api/browse':
                 return self.reply(200,browse_folders(data.get('path')))
             if self.path == '/api/jobs':
-                return self.reply(201,manager.create(data))
-            match = re.fullmatch(r'/api/jobs/([a-f0-9]{16})/(analyze|detect|edit|cancel|export)',self.path)
+                automatic = data.get('auto_run', False)
+                if type(automatic) is not bool:
+                    raise ValueError('auto_run must be true or false')
+                snapshot = manager.create(data)
+                if automatic:
+                    snapshot = manager.launch(snapshot['id'], 'automatic')
+                return self.reply(201,snapshot)
+            match = re.fullmatch(r'/api/jobs/([a-f0-9]{16})/(analyze|detect|automatic|edit|cancel|export)',self.path)
             if not match:
                 return self.reply(404,dict(error='Unknown API route'))
             jid,action = match.groups()

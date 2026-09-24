@@ -75,3 +75,11 @@ A total row follows after 5 CSS pixels: raw sum of all five valid region scores
 from the selected whole capture. Missing/rejected regions leave the total unranked.
 Highest totals (including ties) are starred. This is a practical summary of the
 existing metric, not a calibrated global optical measurement.
+
+**Open & compare automatically** imports a folder and starts the server-side
+`automatic` job: generate preview, detect all five ROIs, then analyze the series.
+**Detect & run comparison** starts the same pipeline on the loaded series.
+No browser-timed follow-up request is needed; refreshing the page does not
+interrupt the job. Cancel stops the active stage. Unaccepted detection stops
+with manual-correction instructions, even when older ROIs already exist.
+The manual Open folder / Detect / Run workflow remains available.
