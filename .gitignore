@@ -106,6 +106,8 @@ libraw_types.h
 # PowerShell scripts (temporary)
 *.ps1
 !build-windows.ps1
+!scripts/
+!scripts/codex-*.ps1
 
 # Large image files (should never be committed)
 *.dng
