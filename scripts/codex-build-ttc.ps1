@@ -14,4 +14,10 @@ if (-not (Test-Path -LiteralPath '.\build\ttc-simple.exe')) {
     throw 'Build completed without producing build\ttc-simple.exe.'
 }
 
+Write-Host 'Preparing Vlad detector Python dependencies...'
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\scripts\codex-ensure-vlad-deps.ps1'
+if ($LASTEXITCODE -ne 0) {
+    throw "Vlad detector dependency setup failed with exit code $LASTEXITCODE."
+}
+
 Write-Host 'Built build\ttc-simple.exe.'
