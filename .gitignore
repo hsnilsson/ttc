@@ -113,6 +113,10 @@ libraw_types.h
 *.jpg
 *.jpeg
 !flow.jpg
+!docs/screenshots/
+!docs/screenshots/*.png
+!docs/screenshots/*.jpg
+!docs/screenshots/*.jpeg
 
 # Development artifacts
 *.txt

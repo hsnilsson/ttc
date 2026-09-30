@@ -1,5 +1,27 @@
 # Test Target Cropper (native C)
 
+TTC is a local tool for comparing lens sharpness and sensor/film flatness from
+repeat photos of a printed test target. It finds or accepts five measurement
+regions on Vlad's target, tracks those same regions through a stack of captures,
+and turns the measurements into a sharpness map by aperture and image position.
+
+This is useful because manual crop comparison is slow and easy to bias: each
+aperture can have multiple repeats, corners can drift between frames, and one
+bad capture should not quietly become the result. TTC keeps the source images
+local, reuses the same target squares across the stack, reports rejected or
+ambiguous regions explicitly, and exports an offline report that can be shared
+without private file paths.
+
+![Detected measurement squares on Vlad's test target](docs/screenshots/vlad-roi-overlay.jpg)
+
+The app measures the center and four corner regions on the same target position
+for every capture.
+
+![Sharpness map across aperture and image position](docs/screenshots/sharpness-map.png)
+
+The report summarizes each aperture as a column and each measured target region
+as a row, with a total row to make the best complete capture easier to spot.
+
 Create a lossless PNG composite containing a center crop and four corner crops
 for comparing lens sharpness and film/sensor flatness. Source pixels are copied
 at 1:1 resolution; there is no resizing or JPEG recompression.
