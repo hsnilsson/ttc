@@ -1,0 +1,32 @@
+name: Publish TTC guide
+on:
+  push:
+    branches: [main]
+    paths: ['site/**', 'docs/screenshots/**', 'scripts/build-pages.ps1', '.github/workflows/pages.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - name: Stage public guide only
+        shell: pwsh
+        run: ./scripts/build-pages.ps1
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/pages
+      - uses: actions/deploy-pages@v4
+        id: deploy
