@@ -108,12 +108,12 @@ Image* load_image(const char *filename) {
             return NULL;
         }
         
-        // Full resolution, daylight WB, sRGB primaries and LibRaw default gamma.
+        // Full resolution, camera/as-shot WB, sRGB primaries and LibRaw default gamma.
         // raw2image alone is NOT a rendered RGB image (nor an 8-bit buffer).
         raw->params.half_size = 0;
         raw->params.output_bps = 8;
         raw->params.output_color = 1;
-        raw->params.use_camera_wb = 0;
+        raw->params.use_camera_wb = 1;
         raw->params.use_auto_wb = 0;
         raw->params.no_auto_bright = 1;
         raw->params.adjust_maximum_thr = 0.0f;
@@ -140,7 +140,7 @@ Image* load_image(const char *filename) {
         img->data = rendered->data;
         img->allocation = rendered;
         libraw_close(raw);
-        printf("Loaded DNG: %dx%d (daylight WB, sRGB primaries, LibRaw gamma, fixed brightness)\n", img->width, img->height);
+        printf("Loaded DNG: %dx%d (camera WB, sRGB primaries, LibRaw gamma, fixed brightness)\n", img->width, img->height);
         return img;
         
     } else {

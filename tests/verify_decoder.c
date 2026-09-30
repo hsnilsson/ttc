@@ -72,7 +72,8 @@ static int reference_hash(const char *input, int *width, int *height,
         raw->params.half_size = 0;
         raw->params.output_bps = 8;
         raw->params.output_color = 1;
-        raw->params.use_camera_wb = raw->params.use_auto_wb = 0;
+        raw->params.use_camera_wb = 1;
+        raw->params.use_auto_wb = 0;
         raw->params.no_auto_bright = 1;
         raw->params.adjust_maximum_thr = 0;
         raw->params.bright = 1;

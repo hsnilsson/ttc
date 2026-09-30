@@ -14,7 +14,7 @@ stb PNG compressor, and full RGB copy. Both benchmark builds linked the same
 pre-existing `C:\libraw\lib\libraw.a` to isolate application/encoder changes.
 The reproducible build also builds LibRaw from pinned upstream source.
 
-Rendering: full size, daylight WB, sRGB primaries, LibRaw default gamma/demosaic,
+Rendering: full size, camera/as-shot WB, sRGB primaries, LibRaw default gamma/demosaic,
 metadata orientation, brightness 1, no auto WB/brightness, and no content-based
 maximum adjustment. The RGB8 policy is explicit, not a linear RAW export.
 

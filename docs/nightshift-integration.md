@@ -45,7 +45,7 @@ No source images changed. No remote push or GitHub discussion writes.
 Analysis is relative rendered-image detail, not calibrated MTF/lp/mm or an
 aperture winner. Regions are configured in a text file; there is no interactive
 selection UI. Tracking does not handle scale, rotation or subpixel motion.
-RGB8, daylight WB and fixed processing are deliberate current defaults.
+RGB8, camera/as-shot WB and fixed processing are deliberate current defaults.
 Potential next steps: interactive ROI selection, broader geometry tracking,
 calibrated USAF analysis/fringing, and a chosen scientific/color workflow.
 See docs/roi-analysis.md and docs/roi-validation.md for detailed limitations.

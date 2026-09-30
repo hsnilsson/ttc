@@ -191,6 +191,10 @@ class Manager:
     def save(self, job):
         (job['dir']/'manifest.json').write_text(json.dumps(job['result'], indent=2, allow_nan=False), encoding='utf-8')
 
+    def progress(self, job, **values):
+        if 'progress' in job:
+            job['progress'].update(values)
+
     def create(self, data):
         if not isinstance(data.get('input_dir'), str) or not isinstance(data.get('apertures', {}), dict):
             raise ValueError('input_dir must be a path string; apertures must be an object')
@@ -298,7 +302,13 @@ class Manager:
                 for frame in job['result']['frames']:
                     frame['regions'] = []; frame['status'] = 'ready'
                 regroup(job['result'], job['overrides'])
-            job['progress']['message'] = action
+            labels = {
+                'analyze': 'Preparing measurement and alignment...',
+                'detect': 'Preparing target detection preview...',
+                'automatic': 'Starting automatic target detection and comparison...',
+                'export': 'Preparing offline report export...',
+            }
+            self.progress(job, completed=0, total=0, message=labels.get(action, action))
         threading.Thread(target=self.worker,args=(job,action,data or {}),daemon=True).start()
         return self.snapshot(jid)
 
@@ -317,8 +327,9 @@ class Manager:
                 if line.startswith('Analyzing '):
                     started += 1
                     with self.lock:
-                        job['progress']['completed'] = min(job['progress']['total'], started-1)
-                        job['progress']['message'] = f"Processing capture {started} of {job['progress']['total']}"
+                        if 'progress' in job:
+                            job['progress']['completed'] = min(job['progress']['total'], started-1)
+                            job['progress']['message'] = f"Measuring and aligning capture {started} of {job['progress']['total']}..."
         code = proc.wait()
         proc.stdout.close()
         with self.lock:
@@ -366,25 +377,29 @@ class Manager:
 
     def automatic(self, job):
         with self.lock:
-            job['progress'].update(completed=0, message='Finding target regions automatically…')
+            self.progress(job, completed=0, total=2, message='Step 1 of 2: finding the five target regions automatically...')
         self.detect(job)
         with self.lock:
             if job['cancel']:
                 raise InterruptedError('Cancelled')
             if job['result'].get('detection', {}).get('status') != 'accepted' or len(job['result']['rois']) != 5:
                 raise ValueError('Automatic comparison stopped: target regions could not be verified. Adjust and save the five regions, then Run comparison.')
-            job['progress']['message'] = 'Regions found. Measuring and aligning the image series…'
+            self.progress(job, completed=1, total=2, message='Step 2 of 2: regions found; measuring and aligning the image series...')
         self.analyze(job)
 
     def detect(self, job):
         preview = job['dir']/'preview.png'
         if not preview.exists():
+            with self.lock:
+                self.progress(job, completed=0, total=2, message='Creating a preview from the reference capture...')
             temporary = job['dir']/('preview-'+secrets.token_hex(4)+'.png')
             try:
                 self.run_native(job, ['--preview', job['paths'][0], temporary])
                 temporary.replace(preview)
             finally:
                 temporary.unlink(missing_ok=True)
+        with self.lock:
+            self.progress(job, completed=1, total=2, message='Locating the five target regions in the preview...')
         m = job['result']
         detector = Path(__file__).with_name('vlad_registration.py')
         with self.lock:
@@ -414,6 +429,7 @@ class Manager:
                 m['warnings'] = result.get('warnings', []) + ['Detection failed; existing saved regions and results were retained.']
                 return
             m['warnings'] = result.get('warnings', [])
+            self.progress(job, completed=2, total=2, message='Target regions detected and ready to review.')
 
     def analyze(self, job):
         m = job['result']
@@ -426,7 +442,8 @@ class Manager:
         if job['track']:
             args += ['--track',job['track']]
         args += job['paths']
-        job['progress']['completed'] = 0
+        with self.lock:
+            self.progress(job, completed=0, total=len(m['frames']), message=f"Preparing to measure and align {len(m['frames'])} captures...")
         _, code = self.run_native(job,args)
         with (run/'report.csv').open(encoding='utf-8',newline='') as source:
             rows = list(csv.DictReader(source))
@@ -462,6 +479,11 @@ class Manager:
         m = copy.deepcopy(job['result'])
         if not any(f['regions'] for f in m['frames']):
             raise ValueError('Analyze before exporting')
+        with self.lock:
+            total = sum(1 for f in m['frames'] for r in f['regions'] if r.get('crop_url')) + 3
+            if full_resolution:
+                total += sum(1 for f in m['frames'] if f.get('selected'))
+            self.progress(job, completed=0, total=max(1,total), message='Collecting aligned crops for the offline report...')
         serial = secrets.token_hex(4)
         out = job['dir']/('share-'+serial)
         out.mkdir(); (out/'assets').mkdir()
@@ -477,6 +499,9 @@ class Manager:
                 raise ValueError('Invalid asset path')
             name = source.parent.name+'-'+source.name
             shutil.copyfile(source, out/'assets'/name)
+            with self.lock:
+                job['progress']['completed'] = min(job['progress']['total'], job['progress']['completed']+1)
+                job['progress']['message'] = f"Copying report asset {job['progress']['completed']} of {job['progress']['total']}..."
             return 'assets/'+name
         m['preview_url'] = asset(m.get('preview_url'))
         m.pop('export_url',None)
@@ -499,13 +524,20 @@ class Manager:
                     continue
                 dx,dy = shifts[0]
                 target = out/'assets'/f"{frame['id']}-aligned.png"
+                with self.lock:
+                    job['progress']['message'] = f"Rendering full aligned image for {frame['label']}..."
                 self.run_native(job,['--export-aligned',job['paths'][i],target,dx,dy])
+                with self.lock:
+                    job['progress']['completed'] = min(job['progress']['total'], job['progress']['completed']+1)
                 frame['aligned_url'] = 'assets/'+target.name
                 frame['aligned_status'] = 'integer-translation'
                 frame['aligned_transform'] = dict(dx=dx,dy=dy,width=frame['width'],height=frame['height'],fill='black')
             m['warnings'].append('Full images use the common integer ROI translation; no rotation or subpixel correction.')
         encoded = json.dumps(m,ensure_ascii=True,allow_nan=False).replace('<','\\u003c')
         (out/'manifest.json').write_text(json.dumps(m,indent=2),encoding='utf-8')
+        with self.lock:
+            job['progress']['completed'] = min(job['progress']['total'], job['progress']['completed']+1)
+            job['progress']['message'] = 'Building offline report page...'
         web = ROOT/'web'
         template = web/'index.html'
         if template.exists():
@@ -526,6 +558,9 @@ class Manager:
                     if r['crop_url']:
                         page += '<img style="max-width:100%" src="'+r['crop_url']+'">'
         (out/'report.html').write_text(page,encoding='utf-8')
+        with self.lock:
+            job['progress']['completed'] = min(job['progress']['total'], job['progress']['completed']+1)
+            job['progress']['message'] = 'Compressing report ZIP...'
         archive = job['dir']/('share-'+serial+'.zip')
         try:
             with zipfile.ZipFile(archive,'x',compression=zipfile.ZIP_DEFLATED,compresslevel=1) as z:
@@ -544,6 +579,8 @@ class Manager:
         with self.lock:
             check_cancel()
             job['result']['export_url'] = f"/jobs/{job['id']}/{archive.name}"
+            job['progress']['completed'] = job['progress']['total']
+            job['progress']['message'] = 'Offline report ZIP is ready.'
         return archive
 
 

@@ -36,11 +36,12 @@ The 100% view uses one CSS pixel per source pixel (device/browser scaling may
 still apply). Dragging, wheel zoom and zoom buttons share one pixel transform
 across all regions and captures. No thumbnails are used for detail comparison.
 Alignment is integer translation; a visible caveat explains residual motion.
+The bottom of **Aligned detail** can download a consolidated five-crop ZIP for
+the selected capture: corner crops form a larger square and the center crop is
+drawn over the middle.
 The search radius is editable (0 or 3–32 pixels) through the shared backend.
 When detection cannot accept five regions, **Define regions manually** creates
 five clearly identified draft boxes. Run remains disabled until these are saved.
-The page end can download a consolidated five-crop ZIP for the selected capture:
-corner crops form a larger square and the center crop is drawn over the middle.
 The target overlay marks the center of each small lp/mm / USAF measurement
 square with a crosshair and dot. Its region name is placed outside the measured
 pixels; coordinate edits and dragging remain drafts until **Save corrections**.

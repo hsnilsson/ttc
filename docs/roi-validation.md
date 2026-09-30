@@ -35,7 +35,7 @@ D:\camera scanning\vlads4\_DSC3998-_DSC4013.dng
 ```
 
 Both decoded to **19136 × 12752**, using LibRaw full-size RGB8, sRGB output,
-daylight white balance (`use_camera_wb=0`, `use_auto_wb=0`),
+camera/as-shot white balance (`use_camera_wb=1`, `use_auto_wb=0`),
 `no_auto_bright=1`, `adjust_maximum_thr=0`, and `bright=1`. The full-frame overview
 and five crop previews were inspected: the image orientation and named center /
 corner USAF locations agree with the target. Some ROI boxes deliberately include

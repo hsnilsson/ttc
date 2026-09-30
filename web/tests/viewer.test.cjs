@@ -1,6 +1,6 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const {TABLE_REGIONS,sharpnessTotals,color,valid,groups,normalize,escape,apertureEdits,manualRois,roiLabelClass,RoiHistory,compositeLayout,crc32}=require('../viewer.js');
+const {TABLE_REGIONS,sharpnessTotals,color,valid,groups,normalize,escape,apertureEdits,manualRois,roiLabelClass,RoiHistory,compositeLayout,crc32,progressValue}=require('../viewer.js');
 test('loaded row range uses the full spectrum, including near ties',()=>{
  assert.notEqual(color(99,99,100),color(100,99,100));
  assert.equal(color(99,99,100),color(0,0,100));
@@ -65,6 +65,14 @@ test('composite layout builds a corner square with center drawn over the middle'
 
 test('crc32 matches a standard zip checksum vector',()=>{
  assert.equal(crc32(new TextEncoder().encode('123456789')),0xcbf43926);
+});
+
+test('progress values clamp determinate jobs and allow indeterminate phases',()=>{
+ assert.equal(progressValue({completed:2,total:4}),.5);
+ assert.equal(progressValue({completed:9,total:4}),1);
+ assert.equal(progressValue({completed:-1,total:4}),0);
+ assert.equal(progressValue({completed:0,total:0}),null);
+ assert.equal(progressValue({message:'working'}),null);
 });
 
 test('total uses five valid regions of the selected whole capture and marks ties',()=>{
