@@ -108,6 +108,7 @@ libraw_types.h
 !build-windows.ps1
 !scripts/
 !scripts/codex-*.ps1
+!scripts/build-pages.ps1
 
 # Large image files (should never be committed)
 *.dng

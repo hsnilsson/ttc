@@ -1,5 +1,17 @@
 # Portable Windows distribution
 
+Published packages are available at [GitHub Releases](https://github.com/hsnilsson/ttc/releases/latest).
+Choose `TTC-windows-x64.zip`, not the source archives. The release workflow builds
+the native engine, runs service/viewer checks, smoke-tests the isolated packaged
+runtime and detector, and publishes the ZIP with `SHA256SUMS.txt` and GitHub
+build-provenance attestation. Verify the ZIP with `Get-FileHash -Algorithm SHA256`
+before extraction. Matching hashes detect changed bytes; they do not prove safety.
+`distribution.json` records the source commit and SHA256 for every packaged file
+except itself, including the runtime and launchers. It is provenance, not a signature.
+See the [public guide](https://hsnilsson.github.io/ttc/#safety) for a read-only,
+network-disabled Windows Sandbox trial. Signing and a clean-machine trial remain
+separate from these automated package checks.
+
 `local/package_windows.py` copies an existing Windows CPython runtime, the
 native processing executable and license notices, the shared CLI/service, and
 the browser assets into a new self-contained folder. It does not install

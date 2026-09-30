@@ -140,7 +140,7 @@ with tempfile.TemporaryDirectory() as tmp:
     tracked = subprocess.run(['git','-c',f'safe.directory={ROOT.as_posix()}','-C',str(ROOT),'status','--porcelain','--untracked-files=no'],
                              capture_output=True,text=True)
     hashes = {path.relative_to(output).as_posix():hashlib.sha256(path.read_bytes()).hexdigest()
-              for path in [*sorted((output/'local').glob('*')), output/'build'/'ttc-simple.exe', *sorted((output/'web').glob('*'))]
+              for path in sorted(output.rglob('*'))
               if path.is_file()}
     (output/'distribution.json').write_text(json.dumps({
         'format_version': 1, 'platform': 'windows-x64',

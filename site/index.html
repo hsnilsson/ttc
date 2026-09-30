@@ -19,7 +19,7 @@
   <p class="lead">Your center looks sharp. What about the corners? TTC compares repeated photos of Vlad’s test target at different f-stops, so you can choose a practical aperture for your camera-scanning setup.</p>
   <div class="actions"><a class="button" href="https://github.com/hsnilsson/ttc/releases/latest">Download for Windows ↗</a><a class="text-link" href="#start">How it works ↓</a></div>
   <p class="small">Download the portable ZIP from GitHub Releases. The comparison runs in a browser on your computer.</p>
-  <figure class="hero-image"><img src="images/sharpness-map.png" alt="TTC sharpness table comparing apertures across the center and four corners" width="1440" height="900"><figcaption>Apertures side by side. Five regions from one complete capture.</figcaption></figure>
+  <figure class="hero-image"><img src="images/sharpness-map.png" alt="TTC sharpness table comparing apertures across the center and four corners" width="1263" height="626"><figcaption>Apertures side by side. Five regions from one complete capture.</figcaption></figure>
 </section>
 <section class="wrap intro" aria-label="What TTC helps you decide">
   <div><p class="eyebrow">A better starting point</p><h2>Less crop juggling.<br>More useful comparisons.</h2></div>
@@ -34,7 +34,7 @@
 </ol>
 <div class="note"><strong>Check before trusting the result.</strong> Review the aperture assignments and five measurement boxes. Correct missing f-stops and save corrections. If detection stops, use <strong>Define regions manually</strong>, position all five boxes, save and run the comparison. Test a small series first: high-resolution DNGs need several GB of RAM and substantial output space.</div>
 <p>Use PNG, JPG or DNG captures in one folder; subfolders are not scanned. Export other camera RAW formats to consistently rendered DNG, PNG or JPG first. Avoid mixing file formats or processing settings in one comparison. Aperture metadata may be absent in merged files; use clear filenames such as <code>target_f5.6_repeat1.dng</code> and confirm TTC’s assignments.</p>
-<p>When finished, use <strong>Export share ZIP</strong> to save an offline report with aligned crops. Review the contents before sharing. Use <strong>Stop service</strong> to quit TTC; closing the browser tab alone leaves the local service running.</p>
+<p>When finished, use <strong>Download offline report ZIP</strong> to save a report with aligned crops. Review the contents before sharing. Use <strong>Stop local service</strong> to quit TTC; closing the browser tab alone leaves the local service running. With the console launcher, Ctrl+C stops it.</p>
 </section>
 <section class="wrap section" id="capture"><p class="eyebrow">02 / At the copy stand</p><h2>One setup. Several f-stops. A few repeats.</h2>
 <div class="split"><div>
@@ -46,7 +46,7 @@
   <li><strong>Take at least three repeats per f-stop.</strong> Let vibrations settle. For PS16 / 16-shot pixel-shift captures, keep the target and lighting still throughout each sequence. Merge each sequence using the same settings; each merged DNG is one repeat. TTC compares those merged files; it does not merge the 16 source shots.</li>
 </ol>
 <p class="small">Keep sharpening, denoising, tone settings and output resolution consistent. The printed target, focus, vibration and rendering all affect the measured detail.</p>
-</div><figure><img src="images/vlad-roi-overlay.jpg" alt="Vlad’s target with five measurement regions marked at the center and corners" loading="lazy"><figcaption>Inspect every measurement box. A box on the wrong detail can make a convincing but misleading score.</figcaption></figure></div>
+</div><figure><img src="images/vlad-roi-overlay.jpg" alt="Vlad’s target with five measurement regions marked at the center and corners" width="1265" height="845" loading="lazy"><figcaption>Inspect every measurement box. A box on the wrong detail can make a convincing but misleading score.</figcaption></figure></div>
 <h3>What changing the f-stop can tell you</h3>
 <div class="reading">
 <div><h3>Wider aperture</h3><p>Less depth of field can expose target tilt, field curvature or focus differences. Lens aberrations can also soften corners. A strong center with weaker corners is a reason to inspect the setup, not proof of a defective lens.</p></div>
@@ -55,7 +55,42 @@
 <div><h3>Let repeats and pixels decide</h3><p>Inspect aligned detail at 100%, flip apertures and check repeats. All five regions come from one complete capture. The ± value is repeat half-range, not a confidence interval. Prefer a repeatable, balanced result over a tiny numerical lead. Alignment handles integer translation, not rotation or scale.</p></div>
 </div>
 </section>
-<section class="wrap section" id="safety"><p class="eyebrow">03 / On your computer</p><h2>Your photos stay with you.</h2><p>This website is an introduction. It has no image upload or processing server. TTC processes captures locally and exports reports you can choose to share.</p></section>
+<section class="wrap section" id="safety"><p class="eyebrow">03 / On your computer</p><h2>Your photos stay with you.<br>Trust should be inspectable.</h2>
+<p>The download contains a native Windows executable plus a private Python runtime. It is <strong>unsigned</strong>, so Windows may show a reputation warning. Do not disable antivirus or bypass your organization’s policies to run it. You can inspect the <a href="https://github.com/hsnilsson/ttc">source</a>, <a href="https://github.com/hsnilsson/ttc/actions/workflows/release.yml">release build</a> and <a href="https://github.com/hsnilsson/ttc/blob/main/docs/local-distribution.md">packaging details</a> before deciding.</p>
+<div class="reading">
+<div><h3>No image upload</h3><p>The public website is a static guide with no analytics, scripts or upload form. The downloaded app processes images on your computer and binds its server to 127.0.0.1. It checks request host/origin and requires a session token for changes. Once downloaded, processing needs no internet connection.</p></div>
+<div><h3>Control what it can access</h3><p>Run as a normal user; administrator rights are not needed for TTC. The app reads originals and writes previews, crops and reports into its workspace. A local program still has your user account’s file permissions. Start with copies of non-sensitive target captures.</p></div>
+</div>
+<details><summary>Verify your download before launching</summary>
+<p>Download <strong>SHA256SUMS.txt</strong> alongside the ZIP from the same release. In PowerShell, run:</p>
+<pre><code>Get-FileHash .\TTC-windows-x64.zip -Algorithm SHA256</code></pre>
+<p>Compare the complete hash with the entry in SHA256SUMS.txt. A mismatch means stop and download again. A matching checksum confirms the bytes match that published file; it is not a malware scan or a safety guarantee. Releases built by the new workflow also carry a GitHub build-provenance attestation.</p>
+</details>
+<details><summary>Recommended first trial: Windows Sandbox or a disposable VM</summary>
+<p>If your Windows edition supports <a href="https://learn.microsoft.com/en-us/windows/security/application-security/application-isolation/windows-sandbox/">Windows Sandbox</a>, use it for a cautious trial. Otherwise use a disposable virtual machine. Prepare a dedicated folder containing only the downloaded ZIP and a few non-sensitive test captures; do not expose your full photo library.</p>
+<p>Save the following as <code>TTC-trial.wsb</code>, replacing <code>C:\TTC-trial</code> with that dedicated folder’s absolute path. Keep the shared folder read-only and networking disabled. Allocate RAM appropriate to your computer; 8 GB is a starting trial budget, not a guarantee for very large captures.</p>
+<pre><code>&lt;Configuration&gt;
+  &lt;Networking&gt;Disable&lt;/Networking&gt;
+  &lt;ClipboardRedirection&gt;Disable&lt;/ClipboardRedirection&gt;
+  &lt;MemoryInMB&gt;8192&lt;/MemoryInMB&gt;
+  &lt;MappedFolders&gt;
+    &lt;MappedFolder&gt;
+      &lt;HostFolder&gt;C:\TTC-trial&lt;/HostFolder&gt;
+      &lt;SandboxFolder&gt;C:\TTC-input&lt;/SandboxFolder&gt;
+      &lt;ReadOnly&gt;true&lt;/ReadOnly&gt;
+    &lt;/MappedFolder&gt;
+  &lt;/MappedFolders&gt;
+&lt;/Configuration&gt;</code></pre>
+<p>Open the .wsb file. Inside the sandbox, copy the ZIP from C:\TTC-input to its Desktop and extract it there, so TTC can write its results. Launch TTC inside the sandbox and browse to C:\TTC-input for the test captures. The browser and TTC both run inside the sandbox. Closing it discards its contents; this read-only trial is for evaluation, not saving reports back to your computer.</p>
+<p>See Microsoft’s <a href="https://learn.microsoft.com/en-us/windows/security/application-security/application-isolation/windows-sandbox/windows-sandbox-configure-using-wsb-file">configuration documentation</a> for supported options. A sandbox reduces exposure; it does not prove software is safe.</p>
+</details>
+<details><summary>Why a download instead of a hosted analyzer?</summary>
+<p>GitHub Releases can host the Windows package; GitHub Pages hosts this guide. Pages cannot execute the native application or run an analysis server. Large merged PS16 DNGs can make upload and remote storage expensive and slow, depending on your connection. Local processing avoids that transfer and keeps the full-resolution source images with you.</p>
+</details>
+<details><summary>What is included when I share a report?</summary>
+<p>Offline report ZIPs contain aligned target crops, measurement data and a viewer. Private source paths and native logs are excluded, but image content and capture labels remain; optional full-frame export includes more image content. Inspect the ZIP before sharing and avoid sensitive filenames. Processing jobs remain in the extracted app’s build/local-jobs folder until you remove them.</p>
+</details>
+</section>
 </main>
 <footer class="wrap"><p>TTC · Test Target Cropper</p><p><a href="https://github.com/hsnilsson/ttc">Source & documentation</a> · <a href="https://github.com/hsnilsson/ttc/releases">Releases</a> · MIT licensed</p></footer>
 </body>
