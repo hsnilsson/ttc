@@ -4,6 +4,7 @@
   const REGIONS = ['center', 'tl', 'tr', 'bl', 'br'];
   const TABLE_REGIONS = ['tl','tr','center','bl','br'];
   const LABELS = {center:'Center',tl:'Top left',tr:'Top right',bl:'Bottom left',br:'Bottom right'};
+  const COMPOSITE_REGIONS = ['tl','tr','bl','br','center'];
   // Labels are deliberately outside their editable rectangle: the crosshair,
   // not a label, marks the pixel coordinate used as the measurement center.
   const roiLabelClass = id => `roi-label roi-label-${REGIONS.includes(id) ? id : 'other'}`;
@@ -39,6 +40,29 @@
   }
   const apertureEdits=(captures,original)=>Object.fromEntries(captures.filter(c=>c.aperture!==original.find(o=>o.id===c.id)?.aperture).map(c=>[c.id,c.aperture]));
   function manualRois(width,height){if(!(width>=16&&height>=16))return [];const size=Math.max(8,Math.round(Math.min(width,height)*.05));return REGIONS.map((id,i)=>{const [cx,cy]=[[.5,.5],[.15,.15],[.85,.15],[.15,.85],[.85,.85]][i];return {id,x:Math.round(cx*width-size/2),y:Math.round(cy*height-size/2),width:size,height:size};});}
+  function compositeLayout(sizes){
+    const left=Math.max(sizes.tl?.width||0,sizes.bl?.width||0),right=Math.max(sizes.tr?.width||0,sizes.br?.width||0);
+    const top=Math.max(sizes.tl?.height||0,sizes.tr?.height||0),bottom=Math.max(sizes.bl?.height||0,sizes.br?.height||0);
+    const width=left+right,height=top+bottom,center=sizes.center||{width:0,height:0};
+    return {width,height,placements:{tl:{x:left-(sizes.tl?.width||0),y:top-(sizes.tl?.height||0)},tr:{x:left,y:top-(sizes.tr?.height||0)},bl:{x:left-(sizes.bl?.width||0),y:top},br:{x:left,y:top},center:{x:Math.round((width-center.width)/2),y:Math.round((height-center.height)/2)}}};
+  }
+  function crc32(bytes){let c=-1;for(const b of bytes){c^=b;for(let k=0;k<8;k++)c=(c>>>1)^(0xedb88320&-(c&1));}return (c^-1)>>>0;}
+  function zipStore(files){
+    const encoder=new TextEncoder(),chunks=[],central=[];let offset=0;
+    const u16=n=>Uint8Array.of(n&255,n>>>8&255),u32=n=>Uint8Array.of(n&255,n>>>8&255,n>>>16&255,n>>>24&255);
+    for(const file of files){
+      const name=encoder.encode(file.name),data=file.data,crc=crc32(data);
+      const local=[u32(0x04034b50),u16(20),u16(0),u16(0),u16(0),u16(0),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),name,data];
+      chunks.push(...local);central.push({name,crc,size:data.length,offset});offset+=local.reduce((sum,part)=>sum+part.length,0);
+    }
+    const centralStart=offset;
+    for(const file of central){
+      const record=[u32(0x02014b50),u16(20),u16(20),u16(0),u16(0),u16(0),u16(0),u32(file.crc),u32(file.size),u32(file.size),u16(file.name.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(file.offset),file.name];
+      chunks.push(...record);offset+=record.reduce((sum,part)=>sum+part.length,0);
+    }
+    chunks.push(u32(0x06054b50),u16(0),u16(0),u16(central.length),u16(central.length),u32(offset-centralStart),u32(centralStart),u16(0));
+    return new Blob(chunks,{type:'application/zip'});
+  }
   function sharpnessTotals(manifest){
     const totals=groups(manifest).map(g=>{
       const capture=g.captures.find(c=>c.id===g.selectedCaptureId);
@@ -48,7 +72,7 @@
     const best=Math.max(...totals.filter(t=>Number.isFinite(t.value)).map(t=>t.value));
     return totals.map(t=>({...t,best:Number.isFinite(t.value)&&Math.abs(t.value-best)<=Number.EPSILON*Math.max(1,Math.abs(best))*8}));
   }
-  const api = {TABLE_REGIONS, sharpnessTotals, REGIONS, valid, color, groups, escape, normalize, apertureEdits, manualRois, roiLabelClass, RoiHistory};
+  const api = {TABLE_REGIONS, sharpnessTotals, REGIONS, valid, color, groups, escape, normalize, apertureEdits, manualRois, roiLabelClass, RoiHistory, compositeLayout, crc32};
   if (typeof module !== 'undefined') module.exports=api;
   if (typeof document === 'undefined') return;
   let manifest={captures:[],apertures:[],rois:[]}, offline=false, apertureIndex=0, region='center', repeatId=null, zoom=1, pan={x:0,y:0}, focused=false, polling=null, token=null, jobId=null, pendingExport=false, setupOpen=true, manualDraft=false, folderPath="", requestPending=false, configDirty=false;
@@ -108,7 +132,7 @@
   }
   function markConfigDirty(){
     configDirty=true;
-    root.querySelectorAll('#run,#detect,#automatic,#export,#choose-capture').forEach(el=>el.disabled=true);
+    root.querySelectorAll('#run,#detect,#automatic,#export,#download-composite,#choose-capture').forEach(el=>el.disabled=true);
     error('Unsaved corrections. Save corrections before running or exporting.');
   }
   function render(){
@@ -130,7 +154,7 @@
     }
     syncRoiOverlay();
     const newScroll=root.querySelector('.roi-scroller');if(newScroll&&roiPosition){newScroll.scrollLeft=roiPosition.x;newScroll.scrollTop=roiPosition.y;}
-    if(manifest.job?.status === "running")root.querySelectorAll("#import,#import-auto,#browse,#quit,#save-config,#detect,#automatic,#export,#choose-capture,#tracking-radius,#manual-rois,#roi-undo,#roi-reset,[data-aperture],[data-roi-id]").forEach(el=>el.disabled=true);
+    if(manifest.job?.status === "running")root.querySelectorAll("#import,#import-auto,#browse,#quit,#save-config,#detect,#automatic,#export,#download-composite,#choose-capture,#tracking-radius,#manual-rois,#roi-undo,#roi-reset,[data-aperture],[data-roi-id]").forEach(el=>el.disabled=true);
     if(manualDraft){document.getElementById('run').disabled=true;error('Manual region draft: reposition and resize all five boxes, then Save corrections before running. These boxes are not detected targets.');}
     if(manifest.job?.status==='failed')error(manifest.job.message||'Processing failed. Review the setup and try again.');
     if(activeId)document.getElementById(activeId)?.focus({preventScroll:true});
@@ -144,7 +168,40 @@
     return `<tfoot><tr class="total-gap" aria-hidden="true"><td colspan="${totals.length+1}"></td></tr><tr class="sharpness-total"><th scope="row">Total sharpness<small>Sum of 5 regions</small></th>${totals.map((t,i)=>`<td class="heatmap-value ${i===apertureIndex?'selected-column':''}" data-column="${i}" style="--cell:${t.value===null?'#29343d':color(t.value,min,max)};--ink:${t.value!==null&&t.value>=(min+max)/2?'#10171c':'#fff'}"><div class="cell"><strong>${fmt(t.value)}</strong><small>${t.best?'★ Highest total':t.value===null?'Needs all 5 regions':'Sum of 5 regions'}</small></div></td>`).join('')}</tr></tfoot>`;
   }
   function resultsHTML(gs){return `<section class="panel"><div class="bar spread"><h2>3 · Compare apertures</h2>${offline?'':`<div class="bar"><button id="export">Download offline report ZIP</button>${manifest.export_url?`<a class="button" href="${escape(manifest.export_url)}" download>Save latest ZIP</a>`:''}<label><input id="full-export" type="checkbox"> Include full aligned images</label><small>Full-image export requires consistent alignment across all five regions.</small></div>`}</div><p class="muted">Five regions, one selected capture per aperture. Select an aperture column to compare all five aligned regions.</p><div class="scroll"><table id="heatmap"><caption class="footnote">Each row scales to its loaded accepted values: purple = lowest, teal = middle, yellow = highest. Even small differences use the full spectrum; equal values share one color. Colors show relative position, not significance. Values use the engine’s detail metric. ± is the repeat half-range, not a confidence interval.</caption><thead><tr><th scope="col">Region</th>${gs.map((g,i)=>`<th scope="col"><button class="aperture-column" data-column="${i}" aria-pressed="${i===apertureIndex}" aria-label="Select aperture f/${fmt(g.value)}">f/${fmt(g.value)}${g.flags.length?" ⚠":""}<small style="display:block">${escape(g.selectedCaptureId?g.captures.find(c=>c.id===g.selectedCaptureId)?.name||g.selectedCaptureId:"No valid capture")}</small><span class="column-selection">${i===apertureIndex?"Selected":"Select column"}</span></button></th>`).join('')}</tr></thead><tbody>${TABLE_REGIONS.map(r=>{const ms=gs.map(g=>measurement(g.captures.find(c=>c.id===g.selectedCaptureId),r)||(g.captures.some(c=>Object.keys(c.measurements||{}).length)?{status:"No valid capture",flags:[...g.flags,...new Set(g.captures.flatMap(c=>Object.values(c.measurements||{}).filter(m=>!valid(m)).map(m=>m.status)))]}:null));const values=ms.filter(valid).map(m=>m.value),min=Math.min(...values),max=Math.max(...values);return `<tr><th scope="row">${LABELS[r]}</th>${ms.map((m,i)=>`<td class="heatmap-value ${i===apertureIndex?'selected-column':''}" data-column="${i}" style="--cell:${valid(m)?color(m.value,min,max):'#29343d'};--ink:${valid(m)&&m.value>=(min+max)/2?'#10171c':'#fff'}"><div class="cell" title="${escape([m?.status||'Not measured',...(m?.flags||[])].join(' · '))}"><strong>${valid(m)?fmt(m.value):'—'}</strong><small>${valid(m)?(Number.isFinite(m.uncertainty)?'± '+fmt(m.uncertainty):'repeat spread unavailable'):(m?.status||'Not measured')}</small>${m?.flags?.length?'<br><small>⚠ Review flags</small>':''}</div></td>`).join('')}</tr>`;}).join('')}</tbody>${totalsHTML()}</table></div><p class="footnote">Total = sum of all five valid region scores from the selected capture. Use as an overall guide; the individual regions use different target patterns.</p></section><section class="panel" id="comparison"><div class="bar spread"><h2>Aligned detail</h2><label><input type="checkbox" id="focus" ${focused?'checked':''}> Focus region</label><select id="region-choice" aria-label="Focused region">${REGIONS.map(r=>`<option value="${r}" ${r===region?'selected':''}>${LABELS[r]}</option>`).join('')}</select></div><div class="bar"><button id="previous" aria-label="Previous aperture">←</button><select id="aperture-choice" aria-label="Aperture">${gs.map((g,i)=>`<option value="${i}" ${i===apertureIndex?'selected':''}>f/${fmt(g.value)}</option>`).join('')}</select><button id="next" aria-label="Next aperture">→</button><select id="repeat-choice" aria-label="Capture repeat">${gs[apertureIndex].captures.map(c=>`<option value="${escape(c.id)}" ${c.id===selected()?.id?'selected':''}>${escape(c.name||c.id)}${c.id===gs[apertureIndex].selectedCaptureId?' · selected whole capture':''}</option>`).join('')}</select><button id="choose-capture">Use this whole capture</button></div><p id="capture-flags" class="warning"></p><div class="bar"><button id="zoom-out" aria-label="Zoom out">−</button><output id="zoom-value">100%</output><button id="zoom-in" aria-label="Zoom in">+</button><button id="reset">1:1 · center</button><span class="muted">Drag to pan · wheel to zoom · ← → apertures · [ ] repeats · shared pixel view</span></div><p class="footnote">Alignment uses whole-pixel translation; small residual motion may remain.</p><div id="crops" class="crop-grid ${focused?'focused':''}"></div></section>`;}
-  function renderCrops(){const container=document.getElementById('crops');if(!container)return;const c=selected();document.getElementById('capture-flags').textContent=[...(groups(manifest)[apertureIndex]?.flags||[]),...(c?.flags||[])].join(' · ');container.innerHTML=(focused?[region]:REGIONS).map(r=>{const m=measurement(c,r),crop=m?.crop;return `<article class="crop-card"><div class="crop-title"><strong>${LABELS[r]}</strong>${crop?`<a href="${escape(crop.url)}" download>Save crop</a>`:''}</div><div class="viewport" tabindex="0" aria-label="${LABELS[r]} crop, shared zoom and pan">${crop?`<img src="${escape(crop.url)}" alt="${LABELS[r]}, ${escape(c?.name||c?.id)}, full detail aligned crop" width="${Number(crop.width)}" height="${Number(crop.height)}">`:'<div class="empty">No aligned crop available</div>'}</div><small>${escape(m?.status||'Not measured')}${m?.flags?.length?' · '+escape(m.flags.join(' · ')):''}</small></article>`;}).join('');container.querySelectorAll('.viewport').forEach(el=>{el.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.125,Math.min(8,zoom*(e.deltaY<0?1.25:.8)));transform();},{passive:false});el.addEventListener('pointerdown',e=>{el.setPointerCapture(e.pointerId);let x=e.clientX,y=e.clientY;const move=e=>{pan.x+=(e.clientX-x)/zoom;pan.y+=(e.clientY-y)/zoom;x=e.clientX;y=e.clientY;transform();};el.addEventListener('pointermove',move);el.addEventListener('pointerup',()=>el.removeEventListener('pointermove',move),{once:true});el.addEventListener('pointercancel',()=>el.removeEventListener('pointermove',move),{once:true});});});transform();}
+  function compositeReady(capture){return COMPOSITE_REGIONS.every(r=>measurement(capture,r)?.crop?.url);}
+  function compositeFileName(capture){return `ttc-composite-${String(capture?.name||capture?.id||'capture').replace(/[^a-z0-9._-]+/gi,'-')}.zip`;}
+  function compositeHTML(){const capture=selected(),ready=compositeReady(capture);return `<div class="composite-download"><div class="bar spread"><div><h3>Consolidated crop ZIP</h3><p class="muted">Merges this capture's five crops: the four corners form a larger square and the center crop is drawn on top.</p></div><button id="download-composite" class="primary" ${ready?'':'disabled'}>Download merged five-image ZIP</button></div><p id="composite-status" class="${ready?'footnote':'warning'}">${ready?'Uses the currently selected aperture and capture repeat.':'Select a measured capture with all five aligned crops first.'}</p></div>`;}
+  async function loadImage(url){
+    const image=new Image();
+    image.decoding='async';
+    image.src=url;
+    if(image.decode)await image.decode();else await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=reject;});
+    return image;
+  }
+  async function downloadCompositeZip(){
+    const button=document.getElementById('download-composite'),status=document.getElementById('composite-status'),capture=selected();
+    if(!compositeReady(capture)){if(status)status.textContent='All five aligned crops are required before the composite ZIP can be created.';return;}
+    if(button)button.disabled=true;if(status)status.textContent='Creating composite ZIP...';
+    try{
+      const images=Object.fromEntries(await Promise.all(COMPOSITE_REGIONS.map(async r=>[r,await loadImage(measurement(capture,r).crop.url)])));
+      const sizes=Object.fromEntries(COMPOSITE_REGIONS.map(r=>[r,{width:images[r].naturalWidth||images[r].width,height:images[r].naturalHeight||images[r].height}]));
+      const layout=compositeLayout(sizes),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
+      canvas.width=layout.width;canvas.height=layout.height;ctx.fillStyle='#000';ctx.fillRect(0,0,canvas.width,canvas.height);
+      for(const r of COMPOSITE_REGIONS){const p=layout.placements[r];ctx.drawImage(images[r],p.x,p.y);}
+      const pngBlob=source=>new Promise((resolve,reject)=>source.toBlob(blob=>blob?resolve(blob):reject(Error('PNG export failed')),'image/png'));
+      const imageBlob=image=>{const c=document.createElement('canvas'),x=c.getContext('2d');c.width=image.naturalWidth||image.width;c.height=image.naturalHeight||image.height;x.drawImage(image,0,0);return pngBlob(c);};
+      const compositeBlob=await pngBlob(canvas);
+      const files=await Promise.all([
+        {name:'composite-pyramid.png',blob:compositeBlob},
+        ...COMPOSITE_REGIONS.map(r=>({name:`source-${r}.png`,blob:imageBlob(images[r])})),
+        {name:'README.txt',text:`TTC consolidated five-crop composite\n\nCapture: ${capture?.name||capture?.id||'unknown'}\nLayout: top-left, top-right, bottom-left and bottom-right form a larger square. The center crop is drawn last and centered over them, like a pyramid viewed from above.\n`}
+      ].map(async file=>({name:file.name,data:file.text?new TextEncoder().encode(file.text):new Uint8Array(await (await file.blob).arrayBuffer())})));
+      const link=document.createElement('a');link.href=URL.createObjectURL(zipStore(files));link.download=compositeFileName(capture);link.click();setTimeout(()=>URL.revokeObjectURL(link.href),30000);
+      if(status)status.textContent='Composite ZIP is ready.';
+    }catch(e){if(status)status.textContent='Could not create composite ZIP: '+(e.message||String(e));}
+    finally{if(button)button.disabled=false;}
+  }
+  function renderCrops(){const container=document.getElementById('crops');if(!container)return;const c=selected();document.getElementById('capture-flags').textContent=[...(groups(manifest)[apertureIndex]?.flags||[]),...(c?.flags||[])].join(' · ');container.innerHTML=(focused?[region]:REGIONS).map(r=>{const m=measurement(c,r),crop=m?.crop;return `<article class="crop-card"><div class="crop-title"><strong>${LABELS[r]}</strong>${crop?`<a href="${escape(crop.url)}" download>Save crop</a>`:''}</div><div class="viewport" tabindex="0" aria-label="${LABELS[r]} crop, shared zoom and pan">${crop?`<img src="${escape(crop.url)}" alt="${LABELS[r]}, ${escape(c?.name||c?.id)}, full detail aligned crop" width="${Number(crop.width)}" height="${Number(crop.height)}">`:'<div class="empty">No aligned crop available</div>'}</div><small>${escape(m?.status||'Not measured')}${m?.flags?.length?' · '+escape(m.flags.join(' · ')):''}</small></article>`;}).join('')+compositeHTML();document.getElementById('download-composite')?.addEventListener('click',downloadCompositeZip);container.querySelectorAll('.viewport').forEach(el=>{el.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.125,Math.min(8,zoom*(e.deltaY<0?1.25:.8)));transform();},{passive:false});el.addEventListener('pointerdown',e=>{el.setPointerCapture(e.pointerId);let x=e.clientX,y=e.clientY;const move=e=>{pan.x+=(e.clientX-x)/zoom;pan.y+=(e.clientY-y)/zoom;x=e.clientX;y=e.clientY;transform();};el.addEventListener('pointermove',move);el.addEventListener('pointerup',()=>el.removeEventListener('pointermove',move),{once:true});el.addEventListener('pointercancel',()=>el.removeEventListener('pointermove',move),{once:true});});});transform();}
   function transform(){document.querySelectorAll('.viewport img').forEach(el=>el.style.transform=`translate(-50%,-50%) scale(${zoom}) translate(${pan.x}px,${pan.y}px)`);const out=document.getElementById('zoom-value');if(out)out.textContent=Math.round(zoom*100)+'%';}
   function changeAperture(delta){apertureIndex=(apertureIndex+delta+groups(manifest).length)%groups(manifest).length;repeatId=null;render();}
   function bind(){root.querySelectorAll('[data-aperture],[data-roi-id],#tracking-radius').forEach(el=>el.addEventListener('input',markConfigDirty));const on=(id,event,fn)=>document.getElementById(id)?.addEventListener(event,fn);root.querySelector('details')?.addEventListener('toggle',e=>{setupOpen=e.target.open;});on('manual-rois','click',()=>{manifest.rois=manualRois(manifest.width,manifest.height);manualDraft=true;setupOpen=true;render();});on('quit','click',async()=>{try{await request('shutdown',{});clearInterval(polling);document.getElementById('message').textContent='Local service stopped. You can close this tab.';}catch(e){error(e);}});on('browse','click',browseFolders);on('import','click',()=>action('import',{directory:document.getElementById('folder').value}));on('import-auto','click',()=>action('import',{directory:document.getElementById('folder').value,autoRun:true}));on('automatic','click',()=>action('automatic',{}));on('run','click',()=>action('run',{}));on('cancel','click',()=>action('cancel',{}));on('save-config','click',()=>{const captures=manifest.captures.map(c=>({id:c.id,aperture:(v=>v===''?null:Number(v))([...document.querySelectorAll('[data-aperture]')].find(e=>e.dataset.aperture===c.id).value)}));const rois=readRois();const trackValue=document.getElementById('tracking-radius')?.value;action('config',{captures,rois,track:trackValue?Number(trackValue):null});});on('detect','click',()=>action('detect',{}));on('export','click',()=>action('export',{full_resolution:document.getElementById('full-export').checked}));document.querySelectorAll('[data-column]').forEach(el=>el.onclick=()=>{apertureIndex=Number(el.dataset.column);repeatId=null;render();});on('region-choice','change',e=>{region=e.target.value;renderCrops();});on('previous','click',()=>changeAperture(-1));on('next','click',()=>changeAperture(1));on('aperture-choice','change',e=>{apertureIndex=Number(e.target.value);repeatId=null;render();});on('repeat-choice','change',e=>{repeatId=e.target.value;render();});on('choose-capture','click',()=>{const g=groups(manifest)[apertureIndex],id=selected().id;if(offline){manifest.apertures=groups(manifest).map(a=>({value:a.value,selectedCaptureId:a.value===g.value?id:a.selectedCaptureId,flags:a.flags}));render();document.getElementById('message').textContent='Whole-capture override applies to this viewing session.';}else action('select',{aperture:g.value,captureId:id});});on('focus','change',e=>{focused=e.target.checked;render();});on('zoom-in','click',()=>{zoom=Math.min(8,zoom*1.25);transform();});on('zoom-out','click',()=>{zoom=Math.max(.125,zoom*.8);transform();});on('reset','click',()=>{zoom=1;pan={x:0,y:0};transform();});bindRois();}

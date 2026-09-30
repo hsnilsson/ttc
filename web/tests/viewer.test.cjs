@@ -1,6 +1,6 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const {TABLE_REGIONS,sharpnessTotals,color,valid,groups,normalize,escape,apertureEdits,manualRois,roiLabelClass,RoiHistory}=require('../viewer.js');
+const {TABLE_REGIONS,sharpnessTotals,color,valid,groups,normalize,escape,apertureEdits,manualRois,roiLabelClass,RoiHistory,compositeLayout,crc32}=require('../viewer.js');
 test('loaded row range uses the full spectrum, including near ties',()=>{
  assert.notEqual(color(99,99,100),color(100,99,100));
  assert.equal(color(99,99,100),color(0,0,100));
@@ -50,6 +50,21 @@ test('every region label has a dedicated outside-overlay position class',()=>{
   'roi-label roi-label-center','roi-label roi-label-tl','roi-label roi-label-tr','roi-label roi-label-bl','roi-label roi-label-br'
  ]);
  assert.equal(roiLabelClass('unexpected'),'roi-label roi-label-other');
+});
+
+test('composite layout builds a corner square with center drawn over the middle',()=>{
+ const layout=compositeLayout({tl:{width:100,height:90},tr:{width:120,height:80},bl:{width:80,height:110},br:{width:140,height:130},center:{width:60,height:50}});
+ assert.equal(layout.width,240);
+ assert.equal(layout.height,220);
+ assert.deepEqual(layout.placements.tl,{x:0,y:0});
+ assert.deepEqual(layout.placements.tr,{x:100,y:10});
+ assert.deepEqual(layout.placements.bl,{x:20,y:90});
+ assert.deepEqual(layout.placements.br,{x:100,y:90});
+ assert.deepEqual(layout.placements.center,{x:90,y:85});
+});
+
+test('crc32 matches a standard zip checksum vector',()=>{
+ assert.equal(crc32(new TextEncoder().encode('123456789')),0xcbf43926);
 });
 
 test('total uses five valid regions of the selected whole capture and marks ties',()=>{
