@@ -30,11 +30,11 @@ class Checks(unittest.TestCase):
             result=ttc.browse_folders(str(root))
             self.assertEqual([f['name'] for f in result['folders']],['Alpha','r\u00e4ksm\u00f6rg\u00e5s','zebra'])
             self.assertEqual(result['image_count'],1)
-            self.assertEqual(result['parent'],str(root.parent))
+            self.assertEqual(Path(result['parent']).resolve(),root.parent.resolve())
             self.assertTrue(result['roots'])
             child=ttc.browse_folders(str(root/'Alpha'))
             self.assertEqual(child['folders'],[])
-            self.assertEqual(child['parent'],str(root))
+            self.assertEqual(Path(child['parent']).resolve(),root.resolve())
             self.assertIsNone(ttc.browse_folders(root.anchor)['parent'])
             for value in (False,12,[]):
                 with self.assertRaises(ValueError):ttc.browse_folders(value)
