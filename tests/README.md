@@ -25,7 +25,7 @@ hash of all output pixels. A mismatch returns a nonzero exit status. Include a
 camera-rotated DNG to exercise orientation; dimensions come from the rendered
 output, not the raw sensor buffer.
 
-Both paths request full resolution, daylight white balance, RGB8 sRGB output,
+Both paths request full resolution, camera/as-shot white balance, RGB8 sRGB output,
 fixed brightness, no automatic brightness and no content-dependent maximum
 adjustment. Default LibRaw gamma, demosaic and camera orientation apply. This
 checks TTC's extraction against LibRaw's separate output writer, not LibRaw's
