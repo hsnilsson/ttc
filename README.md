@@ -1,94 +1,110 @@
-# Test Target Cropper (ttc)
+# Test Target Cropper (native C)
 
-![flow](flow.jpg)
+Create a lossless PNG composite containing a center crop and four corner crops
+for comparing lens sharpness and film/sensor flatness. Source pixels are copied
+at 1:1 resolution; there is no resizing or JPEG recompression.
 
-Creates composite images from test target photos (DNG or PNG) for analyzing lens performance and optical setup quality. Extracts 4 corner crops and 1 center crop stitched together for easy scrutiny and sharing.
+## Windows build
 
-### Why use a test target like Vlads test targets?
+Run `build-simple.bat`, or from PowerShell:
 
-- **Film flatness & optical quality:** Quickly assess how flat your film or sensor sits in the camera by comparing corner to center sharpness
-- **Maximum resolution testing:** Measure the actual achievable resolution (lp/mm) of your complete setup—camera, lens, scanner, and film handling combined
-- **F-stop optimization:** Easily compare multiple shots taken at different apertures side-by-side, making it simple to find the f-stop that gives your preferred balance of sharpness between corners and center
-
-The tool dramatically reduces file sizes, making it faster to flip through sequences and much easier to share comparisons with others.
-
-Just convert your test target photos to DNG first, then drop the .exe in that directory and run it.
-
-Consider everything below this paragraph as vibe coded and not too much checked. Happy cropping! And just create a github issue if there are any issues. /Henrik
-
-## Installation
-
-**Easiest (Windows):** Download `ttc.exe` from the [Releases](https://github.com/hsnilsson/ttc/releases) page. No Python required.
-
-**Unix/Linux/macOS (install script):**
-
-```bash
-curl -sSL https://raw.githubusercontent.com/hsnilsson/ttc/main/install.sh | bash
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build-windows.ps1
+.\build\ttc-simple.exe 'D:\photos' -o .\output
 ```
 
-**Windows (install script):**
+The build script downloads checksum-pinned portable tools and source dependencies
+into ignored `build/`, builds static libraries, and creates `build/ttc-simple.exe`.
+It does not install system software or require `C:\libraw`. The first build needs
+network access and disk space for the compiler. Subsequent builds reuse downloads.
+The executable uses Windows system DLLs; no separately installed LibRaw or
+libdeflate DLL is required. Keep the generated dependency license notices when
+redistributing it. See [benchmark report](BENCHMARKS.md) for measured performance
+and [test instructions](tests/README.md) for reproduction.
 
-```cmd
-curl -sSL https://raw.githubusercontent.com/hsnilsson/ttc/main/install.bat | cmd
-```
+PNG encoding uses libdeflate with adaptive PNG filtering. This changes compression
+bytes and file size, not decoded pixel values. A manual build without
+`TTC_LIBDEFLATE` falls back to the original stb encoder.
 
-**From source:**
+## DNG rendering
 
-```bash
-git clone https://github.com/hsnilsson/ttc.git && cd ttc
-pip install -r requirements.txt
-python ttc.py --help
-```
+DNGs go through LibRaw unpacking, processing and RGB bitmap export at full
+resolution. Embedded previews and half-size decoding are never substituted.
+Rendering uses daylight white balance, sRGB primaries, LibRaw's default gamma
+curve/demosaic quality, fixed brightness, and metadata orientation. Automatic
+white balance, automatic brightness and content-dependent white-level adjustment
+are disabled so target brightness does not drive per-shot normalization.
+Daylight WB may differ visibly from the camera's selected WB. Camera metadata
+and calibration still affect rendering; this is RGB8 analysis output, not a
+linear scientific RAW export or a color-managed reproduction workflow.
 
-**Build your own .exe:** From repo root, run `python build_exe.py`. Produces `ttc.exe` (includes rawpy for full‑res DNG).
+Earlier native code copied 16-bit RAW bytes as RGB8 without proper processing.
+Its output was invalid and cannot serve as a color or performance reference.
+The corrected output intentionally differs from that version.
 
-## Requirements
-
-Python 3.7+. Install deps: `pip install -r requirements.txt` (Pillow, rawpy, numpy).
+Processing is sequential across files. A 244 MP DNG still requires several GB of
+RAM during rendering. Decoded dimensions reflect LibRaw's active image and camera
+orientation, not necessarily the entire sensor storage rectangle or DNG DefaultCrop.
 
 ## Usage
 
-```bash
-ttc                          # current directory → ./crops
-ttc /path/to/photos           # custom input
-ttc /path/to/photos -o out    # custom output dir
+```powershell
+.\build\ttc-simple.exe                 # Current directory
+.\build\ttc-simple.exe 'D:\photos'     # Directory of PNG/JPG/DNG files
+.\build\ttc-simple.exe . -o results    # Existing parent, create output directory
 ```
 
-**DNG vs PNG:** By default ttc prefers **DNG** (processes only DNGs if present). If there are no DNGs but there are PNGs, it asks before using PNGs. To use only PNGs: `ttc --use-pngs` (or `--use-pngs-only`).
+The output is a square canvas: center at the top, left/right corner pairs in
+two rows below it, black padding in unused areas. The layout and crop coordinates
+are unchanged by the performance work. Files are read from the selected directory,
+not recursively. The legacy command-line scanner has narrower format support
+than the underlying stb loader; use `.png`, `.jpg` or `.dng` inputs.
 
-### Command line options
+## Compare a stack with reusable ROIs
 
+`ttc-simple --analyze target.roi new-results f4.dng f5.6.dng f8.dng` applies
+named pixel-coordinate regions across a stack and produces an HTML report and
+CSV with relative sharpness, contrast, clipping, and optional translation
+tracking. See [ROI analysis usage and limitations](docs/roi-analysis.md).
+These measurements are relative image-detail proxies, not calibrated lp/mm.
+
+## Local browser comparison and offline sharing
+
+The shared CLI/service in `local/ttc_local.py` imports aperture metadata, keeps
+all repeats, supports editable five-region analysis, and selects one complete
+capture per aperture with explicit manual overrides. It calls the same native
+decoder and measurements as the CLI. The browser binds only to 127.0.0.1;
+images stay local.
+
+**Browse folders** opens a chooser inside TTC with drive shortcuts, parent-folder
+navigation, and supported-image counts. Choose **Use this folder**, then **Open
+folder** to import. You can also paste a folder path directly. Loading and path
+errors appear in the app; no separate Windows dialog is required.
+
+With Python 3.10+ and the native engine built:
+
+```powershell
+python local/ttc_local.py serve --engine build/ttc-simple.exe
+python local/ttc_local.py analyze --input 'D:\photos' --roi target.roi --output new-comparison
 ```
-usage: ttc [-h] [-o OUTPUT] [--use-pngs-only] [-v] [input_dir]
 
-Create composite images from Vlad's test target photos
+The browser assets live in `web/`. The detector is enabled automatically by
+the Windows build when `vlad_detector.h` is present. Manual ROI configuration
+remains available. Aperture values can be corrected without decoding again;
+changing ROIs invalidates previous measurements. Only one decode runs at once.
 
-positional arguments:
-  input_dir             Directory containing PNG/DNG files (default: current directory)
+Share exports contain an offline HTML viewer, manifest, and full-detail aligned
+ROI crops for all measured repeats. Private source paths and native logs are
+excluded. Optional full-frame RGB8 export requires consistent integer shifts
+across all five regions; unsupported frames are flagged and crop exports remain
+available. Alignment does not correct rotation, scale, or subpixel motion.
+Repeat half-range is a descriptive spread, not calibrated uncertainty.
 
-optional arguments:
-  -h, --help            show this help message and exit
-  -o OUTPUT, --output OUTPUT
-                        Output directory for composite images (default: INPUT_DIR/crops)
-  --use-pngs-only, --use-pngs
-                        Only process PNG files; default is to prefer DNG and fall back to PNG only after asking
-  -v, --version         show program's version number and exit
-
-Examples:
-  ttc                    # Process current directory
-  ttc ../test_photos     # Process parent directory
-  ttc /path/to/photos    # Process absolute path
-  ttc . -o results       # Custom output directory
-```
-
-## Configuration
-
-Crop positions are percentage-based and set in `ttc.py`: `corner_positions` and `center_crop_percent`. Edit those to match your test target layout.
-
-## Output
-
-One composite per input file: `filename_composite.png` in the output directory (default `INPUT_DIR/crops/`). No compression; square corner crops; center overlay.
+See the [local API/result contract](docs/nightshift2-contract.md) and
+[portable Windows distribution](docs/local-distribution.md). The portable
+folder includes its own Python runtime; users do not need to install Python.
 
 ## License
 
-MIT
+TTC is MIT licensed; see [LICENSE](LICENSE). Dependencies retain their own
+licenses. Build sources and generated binaries are excluded from Git.

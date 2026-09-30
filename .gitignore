@@ -51,9 +51,41 @@ output/
 *.log
 *.out
 
+# Test scripts and temporary files from Python to C conversion
+cleanup-*.bat
+debug-*.c
+debug-*.exe
+test-*.c
+test-*.exe
+test-*.bat
+simple-*.c
+simple-*.exe
+build-debug*.bat
+build-detailed*.bat
+build-file*.bat
+build-minimal*.bat
+build-output*.bat
+ttc_console.exe
+
+# Temporary downloads
+mingw-w64.zip
+vs_buildtools.exe
+w64devkit-x64-*.exe
+
+# Build artifacts
+build/
+dist/
+*.spec
+
+# Test files
+test_*
+*_test.*
+debug-*
+convert-*
+create-*
+extract-*
+
 # Temporary files
-*.tmp
-*.temp
 *.bak
 *.swp
 *~
@@ -61,6 +93,34 @@ output/
 # Archive directory (development files)
 archive/
 
-# Test files
-test_*
-*_test.*
+# w64devkit
+w64devkit/
+
+# Executables
+*.exe
+
+# Copied headers (temporary)
+libraw.h
+libraw_types.h
+
+# PowerShell scripts (temporary)
+*.ps1
+!build-windows.ps1
+
+# Large image files (should never be committed)
+*.dng
+*.png
+*.jpg
+*.jpeg
+!flow.jpg
+
+# Development artifacts
+*.txt
+!README.md
+!LICENSE
+!CHANGELOG.md
+!CONTRIBUTING.md
+!MANIFEST.in
+!requirements.txt
+
+dng-test
