@@ -25,8 +25,36 @@
   <div><p class="eyebrow">A better starting point</p><h2>Less crop juggling.<br>More useful comparisons.</h2></div>
   <div><p>TTC finds five measurement squares, tracks them through your capture series and presents a sharpness map with aligned, full-detail crops. Keep repeats, spot inconsistent captures and inspect the pixels behind the numbers.</p><p>Use it to compare apertures and investigate uneven sharpness. It measures relative detail in rendered images; it does not certify a lens or diagnose alignment by itself.</p></div>
 </section>
-<section class="wrap section" id="start"><p class="eyebrow">01 / Start here</p><h2>From download to comparison.</h2><p>Download the Windows package from <a href="https://github.com/hsnilsson/ttc/releases">GitHub Releases</a>. Source code and build instructions are available in the <a href="https://github.com/hsnilsson/ttc">repository</a>.</p></section>
-<section class="wrap section" id="capture"><p class="eyebrow">02 / At the copy stand</p><h2>One setup. Several f-stops. A few repeats.</h2><p>Photograph the same target at several apertures, keeping the camera, target and lighting fixed. Include the center and all four measurement corners.</p></section>
+<section class="wrap section" id="start"><p class="eyebrow">01 / Start here</p><h2>From download to comparison.</h2>
+<p>You need the Windows application to analyze your photos. This public page explains the workflow; it cannot open folders or run the native decoder on your computer. GitHub Releases hosts the downloadable package.</p>
+<ol class="steps">
+  <li><h3>Download & extract</h3><p>Open <a href="https://github.com/hsnilsson/ttc/releases/latest">the latest release</a> and choose <strong>TTC-windows-x64.zip</strong> under Assets. Extract the entire ZIP to a writable folder with plenty of free space. Keep all its files together. No Python installation is needed.</p></li>
+  <li><h3>Launch locally</h3><p>Double-click <strong>Launch TTC.vbs</strong> in the extracted folder. It opens TTC in your browser at <strong>127.0.0.1</strong>, your own computer. If VBScript is unavailable, open a terminal in that folder and run <code>.\ttc.cmd serve</code>.</p></li>
+  <li><h3>Open your series</h3><p>Choose <strong>Browse folders</strong>, select the folder containing your target shots, then <strong>Use this folder</strong> and <strong>Open & compare automatically</strong>. TTC imports the series, detects five regions and runs the comparison.</p></li>
+</ol>
+<div class="note"><strong>Check before trusting the result.</strong> Review the aperture assignments and five measurement boxes. Correct missing f-stops and save corrections. If detection stops, use <strong>Define regions manually</strong>, position all five boxes, save and run the comparison. Test a small series first: high-resolution DNGs need several GB of RAM and substantial output space.</div>
+<p>Use PNG, JPG or DNG captures in one folder; subfolders are not scanned. Export other camera RAW formats to consistently rendered DNG, PNG or JPG first. Avoid mixing file formats or processing settings in one comparison. Aperture metadata may be absent in merged files; use clear filenames such as <code>target_f5.6_repeat1.dng</code> and confirm TTC’s assignments.</p>
+<p>When finished, use <strong>Export share ZIP</strong> to save an offline report with aligned crops. Review the contents before sharing. Use <strong>Stop service</strong> to quit TTC; closing the browser tab alone leaves the local service running.</p>
+</section>
+<section class="wrap section" id="capture"><p class="eyebrow">02 / At the copy stand</p><h2>One setup. Several f-stops. A few repeats.</h2>
+<div class="split"><div>
+<p>Put Vlad’s printed target where the film normally sits, at your usual scanning magnification. Make the target flat and the camera parallel to it. Include the center and all four small measurement squares, with enough detail to resolve them. Keep the camera, target, lens distance and illumination fixed throughout the series.</p>
+<ol>
+  <li><strong>Choose an aperture series.</strong> A useful starting example is f/4, f/5.6, f/8 and f/11, plus wider settings if your lens supports them. These are test points, not a recommended winning aperture.</li>
+  <li><strong>Focus carefully.</strong> For a practical comparison, focus at your intended working aperture, then keep focus fixed. To compare each aperture’s best achievable result, refocus consistently at each setting and record that choice. Do not mix the two methods.</li>
+  <li><strong>Keep exposure comparable.</strong> Use a fixed low ISO and white balance. Adjust shutter time as you stop down so the target brightness stays similar without clipping. Use a stable stand, remote release or timer and consistent vibration control.</li>
+  <li><strong>Take at least three repeats per f-stop.</strong> Let vibrations settle. For PS16 / 16-shot pixel-shift captures, keep the target and lighting still throughout each sequence. Merge each sequence using the same settings; each merged DNG is one repeat. TTC compares those merged files; it does not merge the 16 source shots.</li>
+</ol>
+<p class="small">Keep sharpening, denoising, tone settings and output resolution consistent. The printed target, focus, vibration and rendering all affect the measured detail.</p>
+</div><figure><img src="images/vlad-roi-overlay.jpg" alt="Vlad’s target with five measurement regions marked at the center and corners" loading="lazy"><figcaption>Inspect every measurement box. A box on the wrong detail can make a convincing but misleading score.</figcaption></figure></div>
+<h3>What changing the f-stop can tell you</h3>
+<div class="reading">
+<div><h3>Wider aperture</h3><p>Less depth of field can expose target tilt, field curvature or focus differences. Lens aberrations can also soften corners. A strong center with weaker corners is a reason to inspect the setup, not proof of a defective lens.</p></div>
+<div><h3>Stopping down</h3><p>A smaller aperture can improve corner detail and tolerate small plane differences. At smaller apertures, diffraction can reduce fine detail across the frame. The balance depends on your lens, magnification, sensor and target.</p></div>
+<div><h3>Read one row at a time</h3><p>Each column is an aperture; each row is a target region. Colors stretch that row’s accepted minimum to maximum. Even tiny differences can look dramatic. The total sums five scores from one selected capture; the star marks the highest total, not statistical confidence.</p></div>
+<div><h3>Let repeats and pixels decide</h3><p>Inspect aligned detail at 100%, flip apertures and check repeats. All five regions come from one complete capture. The ± value is repeat half-range, not a confidence interval. Prefer a repeatable, balanced result over a tiny numerical lead. Alignment handles integer translation, not rotation or scale.</p></div>
+</div>
+</section>
 <section class="wrap section" id="safety"><p class="eyebrow">03 / On your computer</p><h2>Your photos stay with you.</h2><p>This website is an introduction. It has no image upload or processing server. TTC processes captures locally and exports reports you can choose to share.</p></section>
 </main>
 <footer class="wrap"><p>TTC · Test Target Cropper</p><p><a href="https://github.com/hsnilsson/ttc">Source & documentation</a> · <a href="https://github.com/hsnilsson/ttc/releases">Releases</a> · MIT licensed</p></footer>
