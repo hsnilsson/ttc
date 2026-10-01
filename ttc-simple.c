@@ -61,6 +61,48 @@ typedef struct {
     void *allocation; // Optional owning block when data is an interior pointer.
 } Image;
 
+typedef struct {
+    int x, y, w, h;
+    int sx, sy;
+} SelectiveWindow;
+
+#ifndef NO_LIBRAW
+#define SELECTIVE_MAX_WINDOWS 32
+static SelectiveWindow selective_windows[SELECTIVE_MAX_WINDOWS];
+static int selective_window_count = 0;
+static int selective_active = 0;
+static size_t selective_tiles_seen = 0;
+static size_t selective_tiles_decoded = 0;
+
+int ttc_selective_dng_tile_needed(unsigned x, unsigned y, unsigned w, unsigned h) {
+    ++selective_tiles_seen;
+    if (!selective_active) {
+        ++selective_tiles_decoded;
+        return 1;
+    }
+    for (int i = 0; i < selective_window_count; ++i) {
+        const SelectiveWindow *r = selective_windows + i;
+        if (x < (unsigned)(r->sx + r->w) && y < (unsigned)(r->sy + r->h) &&
+            x + w > (unsigned)r->sx && y + h > (unsigned)r->sy) {
+            ++selective_tiles_decoded;
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static void selective_reset(void) {
+    selective_active = 0;
+    selective_window_count = 0;
+    selective_tiles_seen = selective_tiles_decoded = 0;
+}
+#else
+int ttc_selective_dng_tile_needed(unsigned x, unsigned y, unsigned w, unsigned h) {
+    (void)x; (void)y; (void)w; (void)h;
+    return 1;
+}
+#endif
+
 // Create output directory
 int create_output_dir(const char *path) {
     struct stat st = {0};
@@ -159,6 +201,118 @@ Image* load_image(const char *filename) {
     }
 #endif
 }
+
+#ifndef NO_LIBRAW
+static void raw_settings(libraw_data_t *raw) {
+    raw->params.half_size = 0;
+    raw->params.output_bps = 8;
+    raw->params.output_color = 1;
+    raw->params.use_camera_wb = 1;
+    raw->params.use_auto_wb = 0;
+    raw->params.no_auto_bright = 1;
+    raw->params.adjust_maximum_thr = 0.0f;
+    raw->params.bright = 1.0f;
+}
+
+static int selective_profile_ok(libraw_data_t *raw, int width, int height) {
+    const char *decoder = libraw_unpack_function_name(raw);
+    return decoder && strcmp(decoder, "lossless_dng_load_raw()") == 0 &&
+           raw->sizes.width == width && raw->sizes.height == height &&
+           raw->sizes.raw_width == 19200 && raw->sizes.raw_height == 12752 &&
+           raw->sizes.left_margin == 0 && raw->sizes.top_margin == 0 &&
+           raw->sizes.flip == 3 && raw->idata.filters == 0 &&
+           raw->idata.colors == 3 && raw->color.cam_mul[0] > 0 &&
+           raw->color.cam_mul[1] > 0 && raw->color.cam_mul[2] > 0;
+}
+
+static Image *load_selective_dng(const char *filename, int width, int height,
+                                 const SelectiveWindow *windows, int count) {
+    if (!is_dng_file(filename) || !windows || count <= 0 || count > SELECTIVE_MAX_WINDOWS)
+        return NULL;
+    Image *img = calloc(1, sizeof(Image));
+    libraw_data_t *raw = libraw_init(0);
+    if (!img || !raw) {
+        free(img);
+        if (raw) libraw_close(raw);
+        return NULL;
+    }
+    raw_settings(raw);
+    int error = libraw_open_file(raw, filename);
+    if (error != LIBRAW_SUCCESS || !selective_profile_ok(raw, width, height)) {
+        libraw_close(raw);
+        free(img);
+        return NULL;
+    }
+    for (int i = 0; i < count; ++i) {
+        selective_windows[i] = windows[i];
+        selective_windows[i].sx = raw->sizes.left_margin + raw->sizes.width -
+                                  windows[i].x - windows[i].w;
+        selective_windows[i].sy = raw->sizes.top_margin + raw->sizes.height -
+                                  windows[i].y - windows[i].h;
+        if (selective_windows[i].sx < 0 || selective_windows[i].sy < 0 ||
+            selective_windows[i].sx + selective_windows[i].w > (int)raw->sizes.raw_width ||
+            selective_windows[i].sy + selective_windows[i].h > (int)raw->sizes.raw_height) {
+            libraw_close(raw);
+            free(img);
+            selective_reset();
+            return NULL;
+        }
+    }
+    selective_window_count = count;
+    selective_active = 1;
+    selective_tiles_seen = selective_tiles_decoded = 0;
+    error = libraw_unpack(raw);
+    selective_active = 0;
+    if (error != LIBRAW_SUCCESS || !raw->rawdata.color4_image) {
+        libraw_close(raw);
+        free(img);
+        selective_reset();
+        return NULL;
+    }
+    img->width = width;
+    img->height = height;
+    img->data = calloc((size_t)width * height, 3);
+    if (!img->data) {
+        libraw_close(raw);
+        free(img);
+        selective_reset();
+        return NULL;
+    }
+    for (int i = 0; i < count; ++i) {
+        const SelectiveWindow *r = selective_windows + i;
+        raw->params.cropbox[0] = r->sx - raw->rawdata.sizes.left_margin;
+        raw->params.cropbox[1] = r->sy - raw->rawdata.sizes.top_margin;
+        raw->params.cropbox[2] = r->w;
+        raw->params.cropbox[3] = r->h;
+        error = libraw_dcraw_process(raw);
+        libraw_processed_image_t *rendered = NULL;
+        if (error == LIBRAW_SUCCESS)
+            rendered = libraw_dcraw_make_mem_image(raw, &error);
+        if (!rendered || error != LIBRAW_SUCCESS ||
+            rendered->type != LIBRAW_IMAGE_BITMAP || rendered->bits != 8 ||
+            rendered->colors != 3 || rendered->width != (unsigned)r->w ||
+            rendered->height != (unsigned)r->h ||
+            (size_t)rendered->width * rendered->height * 3 != rendered->data_size) {
+            libraw_dcraw_clear_mem(rendered);
+            libraw_close(raw);
+            free(img->data);
+            free(img);
+            selective_reset();
+            return NULL;
+        }
+        for (int y = 0; y < r->h; ++y)
+            memcpy(img->data + ((size_t)(r->y + y) * width + r->x) * 3,
+                   rendered->data + (size_t)y * r->w * 3,
+                   (size_t)r->w * 3);
+        libraw_dcraw_clear_mem(rendered);
+    }
+    printf("Loaded DNG selectively: %dx%d (%zu of %zu tiles, camera WB, sRGB primaries, LibRaw gamma, fixed brightness)\n",
+           img->width, img->height, selective_tiles_decoded, selective_tiles_seen);
+    libraw_close(raw);
+    selective_reset();
+    return img;
+}
+#endif
 
 void free_image(Image *img) {
     if (img) {

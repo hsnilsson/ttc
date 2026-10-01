@@ -212,6 +212,25 @@ static int roi_preview(const Image *im,const Roi *r,int dx,int dy,const char *pa
     free(pixels); return ok;
 }
 
+static int roi_selective_windows(const Roi *rs, int n, int width, int height,
+                                 int radius, SelectiveWindow *out, int max) {
+    if (!out || n > max) return 0;
+    int pad = radius ? 32 + radius + 1 : 0;
+    for (int i = 0; i < n; ++i) {
+        int x0 = rs[i].x - pad, y0 = rs[i].y - pad;
+        int x1 = rs[i].x + rs[i].w + pad, y1 = rs[i].y + rs[i].h + pad;
+        if (x0 < 0) x0 = 0;
+        if (y0 < 0) y0 = 0;
+        if (x1 > width) x1 = width;
+        if (y1 > height) y1 = height;
+        if (x1 <= x0 || y1 <= y0) return 0;
+        out[i].x = x0; out[i].y = y0;
+        out[i].w = x1 - x0; out[i].h = y1 - y0;
+        out[i].sx = out[i].sy = 0;
+    }
+    return n;
+}
+
 static int roi_cli(int argc,char **argv) {
     if (argc<5) {
         fprintf(stderr,"Usage: ttc-simple --analyze CONFIG NEW_OUTPUT_DIR [--track 3..32] IMAGE...\n");
@@ -253,9 +272,16 @@ static int roi_cli(int argc,char **argv) {
     fputs("</pre><table><tr><th>Frame / ROI</th><th>Crop</th><th>Status / shift</th><th>Sharpness proxy</th><th>vs reference</th><th>RMS contrast</th><th>Mean / clipping</th></tr>",html);
     RoiMetrics baseline[ROI_MAX]={{0}};
     int errors=0,reference_ok=0;
+    SelectiveWindow windows[ROI_MAX];
+    int window_count=roi_selective_windows(rs,n,width,height,radius,windows,ROI_MAX);
     for(int i=first;i<argc;++i) {
         printf("Analyzing %s\n",argv[i]); fflush(stdout);
-        Image *im=load_image(argv[i]);
+        Image *im=NULL;
+#ifndef NO_LIBRAW
+        if (i != first && window_count > 0)
+            im=load_selective_dng(argv[i],width,height,windows,window_count);
+#endif
+        if (!im) im=load_image(argv[i]);
         const char *problem=!im ? "decode-failed" :
             im->width!=width || im->height!=height ? "dimension-mismatch" : NULL;
         if (i==first && !problem) reference_ok=1;

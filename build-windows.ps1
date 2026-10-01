@@ -82,6 +82,40 @@ if (!(Test-Path -LiteralPath (Join-Path $rawRoot 'Makefile.mingw'))) {
     New-Item -ItemType Directory -Force -Path $rawContainer | Out-Null
     Invoke-Checked $tar @('-xzf', $rawArchive, '-C', $rawContainer)
 }
+function Enable-SelectiveDngTiles {
+    param([string]$LibRawRoot)
+    $path = Join-Path $LibRawRoot 'src/decoders/dng.cpp'
+    $source = Get-Content -LiteralPath $path -Raw
+    if ($source -notmatch 'ttc_selective_dng_tile_needed') {
+        $source = $source -replace '#include "../../internal/dcraw_defs.h"',
+            "#include `"../../internal/dcraw_defs.h`"`r`n`r`nextern `"C`" int ttc_selective_dng_tile_needed(unsigned x, unsigned y, unsigned w, unsigned h);"
+        $needle = @'
+    if (tile_length < INT_MAX)
+      fseek(ifp, get4(), SEEK_SET);
+    if (!ljpeg_start(&jh, 0))
+      break;
+'@
+        $replacement = @'
+    if (tile_length < INT_MAX)
+      fseek(ifp, get4(), SEEK_SET);
+    if (tile_length < INT_MAX && !ttc_selective_dng_tile_needed(tcol, trow, tile_width, tile_length))
+    {
+      fseek(ifp, save + 4, SEEK_SET);
+      if ((tcol += tile_width) >= raw_width)
+        trow += tile_length + (tcol = 0);
+      continue;
+    }
+    if (!ljpeg_start(&jh, 0))
+      break;
+'@
+        if (-not $source.Contains($needle)) {
+            throw "LibRaw dng.cpp did not match selective tile patch context."
+        }
+        $source = $source.Replace($needle, $replacement)
+        Set-Content -LiteralPath $path -Value $source -Encoding UTF8
+    }
+}
+Enable-SelectiveDngTiles $rawRoot
 $deflateContainer = Join-Path $buildRoot 'dependencies'
 $deflateRoot = Join-Path $deflateContainer 'libdeflate-1.25'
 if (!(Test-Path -LiteralPath (Join-Path $deflateRoot 'CMakeLists.txt'))) {
