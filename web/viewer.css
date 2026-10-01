@@ -10,3 +10,4 @@ a{color:var(--accent)}select{max-width:100%}th small{font-size:11px;font-weight:
 
 #heatmap .total-gap td{height:5px;padding:0;background:var(--panel);cursor:default}#heatmap .sharpness-total th small{display:block}
 .composite-download{grid-column:1/-1;border-top:1px solid var(--line);margin-top:8px;padding-top:18px}.composite-download h3{font-size:16px;margin:0 0 8px}.composite-download p{margin-bottom:8px}
+.composite-grid{display:block}.composite-card{max-width:none}.composite-view{height:min(72vh,780px)}.composite-view img{will-change:transform}@media(max-width:650px){.composite-view{height:62vh}}
