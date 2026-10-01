@@ -1,7 +1,7 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const {TABLE_REGIONS,sharpnessTotals,color,valid,groups,normalize,escape,apertureEdits,manualRois,roiLabelClass,RoiHistory,compositeLayout,crc32,progressValue}=require('../viewer.js');
-test('loaded row range uses the full spectrum, including near ties',()=>{
+const {TABLE_REGIONS,sharpnessRange,sharpnessTotals,color,valid,groups,normalize,escape,apertureEdits,manualRois,roiLabelClass,RoiHistory,compositeLayout,crc32,progressValue}=require('../viewer.js');
+test('supplied color range uses the full spectrum, including near ties',()=>{
  assert.notEqual(color(99,99,100),color(100,99,100));
  assert.equal(color(99,99,100),color(0,0,100));
  assert.equal(color(100,99,100),color(100,0,100));
@@ -84,4 +84,22 @@ test('total uses five valid regions of the selected whole capture and marks ties
  m.apertures[2].selectedCaptureId=null;
  assert.deepEqual(sharpnessTotals(m).map(t=>t.best),[true,false,false]);
  assert.deepEqual(TABLE_REGIONS,['tl','tr','center','bl','br']);
+});
+
+test('matrix range spans all regions and apertures using only valid selected scores',()=>{
+ const capture=(id,aperture,values)=>({id,aperture,measurements:Object.fromEntries(TABLE_REGIONS.map((r,i)=>[r,{value:values[i],status:'accepted'}]))});
+ const m={captures:[capture('a',4,[0,1.7,1,1.2,1.5]),capture('b',8,[1,2,1.7,1.2,1.5]),capture('repeat',4,[100,100,100,100,100]),capture('unknown',null,[200,200,200,200,200])],apertures:[{value:4,selectedCaptureId:'a'},{value:8,selectedCaptureId:'b'}]};
+ let range=sharpnessRange(m);
+ assert.deepEqual(range,{min:0,max:2});
+ const tint=(id,r)=>color(m.captures.find(c=>c.id===id).measurements[r].value,range.min,range.max);
+ assert.equal(tint('a','tr'),tint('b','center'));
+ assert.notEqual(tint('a','tr'),tint('b','tr'));
+ m.captures[0].measurements.tl.status='rejected';
+ m.captures[1].measurements.tr.value=Infinity;
+ assert.deepEqual(sharpnessRange(m),{min:1,max:1.7});
+ m.apertures[1].selectedCaptureId=null;
+ assert.deepEqual(sharpnessRange(m),{min:1,max:1.7});
+ m.apertures[0].selectedCaptureId='repeat';
+ assert.deepEqual(sharpnessRange(m),{min:100,max:100});
+ assert.deepEqual(sharpnessRange({captures:[]}),{min:null,max:null});
 });

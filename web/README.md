@@ -21,9 +21,11 @@ The same rendering code handles live and offline manifests. Backend fields
 the boundary; processing and capture selection remain backend responsibilities.
 Offline whole-capture overrides affect only the current viewing session.
 
-Colors stretch each row's loaded accepted minimum-to-maximum over a purple,
-teal, and yellow spectrum. Small differences use the full range; equal values
-share a neutral middle color. Rejected values are excluded. Colors indicate
+Colors use one accepted minimum-to-maximum across all five regions and all
+apertures, over a purple, teal, and yellow spectrum. Equal scores share the
+same color throughout the matrix; a constant range uses the middle color.
+Only selected captures contribute; rejected values are excluded. The total
+row uses a separate range for its sums. Colors indicate
 relative position, not statistical significance. Clicking a column header or
 any of its five values selects that aperture for all detail panes. The matrix
 has no cell gaps or borders; focus-region selection is a separate control. A missing selected frame remains unranked, and unknown apertures
