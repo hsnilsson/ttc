@@ -1,0 +1,5 @@
+.demo-notice{max-width:1500px;margin:24px auto 0;padding:18px 4vw;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:24px}
+.demo-notice strong{color:var(--accent)}
+.demo-notice p{max-width:850px;margin:6px 0;color:var(--muted)}
+.demo-notice>.bar{flex-shrink:0;max-width:290px}
+@media(max-width:900px){.demo-notice{align-items:flex-start;flex-direction:column;gap:12px}}

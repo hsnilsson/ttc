@@ -1,8 +1,8 @@
-name: Publish TTC guide
+name: Publish TTC guide and demo
 on:
   push:
     branches: [main]
-    paths: ['site/**', 'docs/screenshots/**', 'scripts/build-pages.ps1', '.github/workflows/pages.yml']
+    paths: ['site/**', 'web/viewer.js', 'web/viewer.css', 'web/report.html', 'docs/screenshots/**', 'scripts/build-pages.ps1', '.github/workflows/pages.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -22,7 +22,9 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
-      - name: Stage public guide only
+      - name: Check viewer and demo
+        run: node --test web/tests/viewer.test.cjs web/tests/demo.test.cjs
+      - name: Stage public guide and example demo
         shell: pwsh
         run: ./scripts/build-pages.ps1
       - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3

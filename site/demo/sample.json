@@ -1,0 +1,1135 @@
+{
+  "schema_version": 1,
+  "width": 19136,
+  "height": 12752,
+  "preview": {
+    "url": "assets/target.webp",
+    "width": 19136,
+    "height": 12752
+  },
+  "rois": [
+    {
+      "id": "center",
+      "x": 9263,
+      "y": 4901,
+      "width": 651,
+      "height": 651
+    },
+    {
+      "id": "tl",
+      "x": 2016,
+      "y": 1588,
+      "width": 881,
+      "height": 881
+    },
+    {
+      "id": "tr",
+      "x": 16673,
+      "y": 1992,
+      "width": 881,
+      "height": 881
+    },
+    {
+      "id": "bl",
+      "x": 1613,
+      "y": 9924,
+      "width": 881,
+      "height": 881
+    },
+    {
+      "id": "br",
+      "x": 16271,
+      "y": 10363,
+      "width": 881,
+      "height": 881
+    }
+  ],
+  "tracking_radius": 32,
+  "warnings": [
+    "DEMO \u2014 timings, detection and sharpness scores are simulated. Images are example captures, not measurements of your setup."
+  ],
+  "captures": [
+    {
+      "id": "demo-01",
+      "name": "_DSC3982-_DSC3997.dng",
+      "aperture": 3.5,
+      "apertureSource": "example metadata",
+      "repeat": 1,
+      "flags": [],
+      "measurements": {
+        "center": {
+          "value": 0.204,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-01-center.webp",
+            "width": 651,
+            "height": 651
+          }
+        },
+        "tl": {
+          "value": 0.164,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-01-tl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "tr": {
+          "value": 0.156,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-01-tr.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "bl": {
+          "value": 0.148,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-01-bl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "br": {
+          "value": 0.14,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-01-br.webp",
+            "width": 881,
+            "height": 881
+          }
+        }
+      }
+    },
+    {
+      "id": "demo-02",
+      "name": "_DSC3998-_DSC4013.dng",
+      "aperture": 3.5,
+      "apertureSource": "example metadata",
+      "repeat": 2,
+      "flags": [],
+      "measurements": {
+        "center": {
+          "value": 0.206,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-02-center.webp",
+            "width": 651,
+            "height": 651
+          }
+        },
+        "tl": {
+          "value": 0.166,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-02-tl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "tr": {
+          "value": 0.158,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-02-tr.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "bl": {
+          "value": 0.15,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-02-bl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "br": {
+          "value": 0.142,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-02-br.webp",
+            "width": 881,
+            "height": 881
+          }
+        }
+      }
+    },
+    {
+      "id": "demo-03",
+      "name": "_DSC4222-_DSC4237.dng",
+      "aperture": 4.0,
+      "apertureSource": "example metadata",
+      "repeat": 1,
+      "flags": [],
+      "measurements": {
+        "center": {
+          "value": 0.22,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-03-center.webp",
+            "width": 651,
+            "height": 651
+          }
+        },
+        "tl": {
+          "value": 0.18,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-03-tl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "tr": {
+          "value": 0.172,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-03-tr.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "bl": {
+          "value": 0.164,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-03-bl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "br": {
+          "value": 0.156,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-03-br.webp",
+            "width": 881,
+            "height": 881
+          }
+        }
+      }
+    },
+    {
+      "id": "demo-04",
+      "name": "_DSC4238-_DSC4253.dng",
+      "aperture": 4.0,
+      "apertureSource": "example metadata",
+      "repeat": 2,
+      "flags": [],
+      "measurements": {
+        "center": {
+          "value": 0.222,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-04-center.webp",
+            "width": 651,
+            "height": 651
+          }
+        },
+        "tl": {
+          "value": 0.182,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-04-tl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "tr": {
+          "value": 0.174,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-04-tr.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "bl": {
+          "value": 0.166,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-04-bl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "br": {
+          "value": 0.158,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-04-br.webp",
+            "width": 881,
+            "height": 881
+          }
+        }
+      }
+    },
+    {
+      "id": "demo-05",
+      "name": "_DSC4286-_DSC4301.dng",
+      "aperture": 4.5,
+      "apertureSource": "example metadata",
+      "repeat": 1,
+      "flags": [],
+      "measurements": {
+        "center": {
+          "value": 0.204,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-05-center.webp",
+            "width": 651,
+            "height": 651
+          }
+        },
+        "tl": {
+          "value": 0.196,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-05-tl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "tr": {
+          "value": 0.188,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-05-tr.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "bl": {
+          "value": 0.18,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-05-bl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "br": {
+          "value": 0.172,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-05-br.webp",
+            "width": 881,
+            "height": 881
+          }
+        }
+      }
+    },
+    {
+      "id": "demo-06",
+      "name": "_DSC4302-_DSC4317.dng",
+      "aperture": 4.5,
+      "apertureSource": "example metadata",
+      "repeat": 2,
+      "flags": [],
+      "measurements": {
+        "center": {
+          "value": 0.206,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-06-center.webp",
+            "width": 651,
+            "height": 651
+          }
+        },
+        "tl": {
+          "value": 0.198,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-06-tl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "tr": {
+          "value": 0.19,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-06-tr.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "bl": {
+          "value": 0.182,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-06-bl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "br": {
+          "value": 0.174,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-06-br.webp",
+            "width": 881,
+            "height": 881
+          }
+        }
+      }
+    },
+    {
+      "id": "demo-07",
+      "name": "_DSC4318-_DSC4333.dng",
+      "aperture": 5.0,
+      "apertureSource": "example metadata",
+      "repeat": 1,
+      "flags": [],
+      "measurements": {
+        "center": {
+          "value": 0.188,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-07-center.webp",
+            "width": 651,
+            "height": 651
+          }
+        },
+        "tl": {
+          "value": 0.212,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-07-tl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "tr": {
+          "value": 0.204,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-07-tr.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "bl": {
+          "value": 0.196,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-07-bl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "br": {
+          "value": 0.188,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-07-br.webp",
+            "width": 881,
+            "height": 881
+          }
+        }
+      }
+    },
+    {
+      "id": "demo-08",
+      "name": "_DSC4334-_DSC4349.dng",
+      "aperture": 5.0,
+      "apertureSource": "example metadata",
+      "repeat": 2,
+      "flags": [],
+      "measurements": {
+        "center": {
+          "value": 0.19,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-08-center.webp",
+            "width": 651,
+            "height": 651
+          }
+        },
+        "tl": {
+          "value": 0.214,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-08-tl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "tr": {
+          "value": 0.206,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-08-tr.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "bl": {
+          "value": 0.198,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-08-bl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "br": {
+          "value": 0.19,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-08-br.webp",
+            "width": 881,
+            "height": 881
+          }
+        }
+      }
+    },
+    {
+      "id": "demo-09",
+      "name": "_DSC4350-_DSC4365.dng",
+      "aperture": 5.6,
+      "apertureSource": "example metadata",
+      "repeat": 1,
+      "flags": [],
+      "measurements": {
+        "center": {
+          "value": 0.172,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-09-center.webp",
+            "width": 651,
+            "height": 651
+          }
+        },
+        "tl": {
+          "value": 0.196,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-09-tl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "tr": {
+          "value": 0.188,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-09-tr.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "bl": {
+          "value": 0.18,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-09-bl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "br": {
+          "value": 0.172,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-09-br.webp",
+            "width": 881,
+            "height": 881
+          }
+        }
+      }
+    },
+    {
+      "id": "demo-10",
+      "name": "_DSC4366-_DSC4381.dng",
+      "aperture": 5.6,
+      "apertureSource": "example metadata",
+      "repeat": 2,
+      "flags": [],
+      "measurements": {
+        "center": {
+          "value": 0.174,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-10-center.webp",
+            "width": 651,
+            "height": 651
+          }
+        },
+        "tl": {
+          "value": 0.198,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-10-tl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "tr": {
+          "value": 0.19,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-10-tr.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "bl": {
+          "value": 0.182,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-10-bl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "br": {
+          "value": 0.174,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-10-br.webp",
+            "width": 881,
+            "height": 881
+          }
+        }
+      }
+    },
+    {
+      "id": "demo-11",
+      "name": "_DSC4414-_DSC4429.dng",
+      "aperture": 6.3,
+      "apertureSource": "example metadata",
+      "repeat": 1,
+      "flags": [],
+      "measurements": {
+        "center": {
+          "value": 0.156,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-11-center.webp",
+            "width": 651,
+            "height": 651
+          }
+        },
+        "tl": {
+          "value": 0.18,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-11-tl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "tr": {
+          "value": 0.172,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-11-tr.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "bl": {
+          "value": 0.164,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-11-bl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "br": {
+          "value": 0.156,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-11-br.webp",
+            "width": 881,
+            "height": 881
+          }
+        }
+      }
+    },
+    {
+      "id": "demo-12",
+      "name": "_DSC4430-_DSC4445.dng",
+      "aperture": 6.3,
+      "apertureSource": "example metadata",
+      "repeat": 2,
+      "flags": [],
+      "measurements": {
+        "center": {
+          "value": 0.158,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-12-center.webp",
+            "width": 651,
+            "height": 651
+          }
+        },
+        "tl": {
+          "value": 0.182,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-12-tl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "tr": {
+          "value": 0.174,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-12-tr.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "bl": {
+          "value": 0.166,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-12-bl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "br": {
+          "value": 0.158,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-12-br.webp",
+            "width": 881,
+            "height": 881
+          }
+        }
+      }
+    },
+    {
+      "id": "demo-13",
+      "name": "_DSC4446-_DSC4461.dng",
+      "aperture": 7.1,
+      "apertureSource": "example metadata",
+      "repeat": 1,
+      "flags": [],
+      "measurements": {
+        "center": {
+          "value": 0.14,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-13-center.webp",
+            "width": 651,
+            "height": 651
+          }
+        },
+        "tl": {
+          "value": 0.164,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-13-tl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "tr": {
+          "value": 0.156,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-13-tr.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "bl": {
+          "value": 0.148,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-13-bl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "br": {
+          "value": 0.14,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-13-br.webp",
+            "width": 881,
+            "height": 881
+          }
+        }
+      }
+    },
+    {
+      "id": "demo-14",
+      "name": "_DSC4462-_DSC4477.dng",
+      "aperture": 7.1,
+      "apertureSource": "example metadata",
+      "repeat": 2,
+      "flags": [],
+      "measurements": {
+        "center": {
+          "value": 0.142,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-14-center.webp",
+            "width": 651,
+            "height": 651
+          }
+        },
+        "tl": {
+          "value": 0.166,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-14-tl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "tr": {
+          "value": 0.158,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-14-tr.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "bl": {
+          "value": 0.15,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-14-bl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "br": {
+          "value": 0.142,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-14-br.webp",
+            "width": 881,
+            "height": 881
+          }
+        }
+      }
+    },
+    {
+      "id": "demo-15",
+      "name": "_DSC4478-_DSC4493.dng",
+      "aperture": 8.0,
+      "apertureSource": "example metadata",
+      "repeat": 1,
+      "flags": [],
+      "measurements": {
+        "center": {
+          "value": 0.124,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-15-center.webp",
+            "width": 651,
+            "height": 651
+          }
+        },
+        "tl": {
+          "value": 0.148,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-15-tl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "tr": {
+          "value": 0.14,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-15-tr.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "bl": {
+          "value": 0.132,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-15-bl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "br": {
+          "value": 0.124,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-15-br.webp",
+            "width": 881,
+            "height": 881
+          }
+        }
+      }
+    },
+    {
+      "id": "demo-16",
+      "name": "_DSC4494-_DSC4509.dng",
+      "aperture": 8.0,
+      "apertureSource": "example metadata",
+      "repeat": 2,
+      "flags": [],
+      "measurements": {
+        "center": {
+          "value": 0.126,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-16-center.webp",
+            "width": 651,
+            "height": 651
+          }
+        },
+        "tl": {
+          "value": 0.15,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-16-tl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "tr": {
+          "value": 0.142,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-16-tr.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "bl": {
+          "value": 0.134,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-16-bl.webp",
+            "width": 881,
+            "height": 881
+          }
+        },
+        "br": {
+          "value": 0.126,
+          "uncertainty": 0.001,
+          "status": "accepted",
+          "flags": [],
+          "crop": {
+            "url": "assets/capture-16-br.webp",
+            "width": 881,
+            "height": 881
+          }
+        }
+      }
+    }
+  ],
+  "apertures": [
+    {
+      "value": 3.5,
+      "selectedCaptureId": "demo-01",
+      "flags": []
+    },
+    {
+      "value": 4.0,
+      "selectedCaptureId": "demo-03",
+      "flags": []
+    },
+    {
+      "value": 4.5,
+      "selectedCaptureId": "demo-05",
+      "flags": []
+    },
+    {
+      "value": 5.0,
+      "selectedCaptureId": "demo-07",
+      "flags": []
+    },
+    {
+      "value": 5.6,
+      "selectedCaptureId": "demo-09",
+      "flags": []
+    },
+    {
+      "value": 6.3,
+      "selectedCaptureId": "demo-11",
+      "flags": []
+    },
+    {
+      "value": 7.1,
+      "selectedCaptureId": "demo-13",
+      "flags": []
+    },
+    {
+      "value": 8.0,
+      "selectedCaptureId": "demo-15",
+      "flags": []
+    }
+  ]
+}
