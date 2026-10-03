@@ -42,6 +42,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Detector dependencies failed' }
       - name: Verify service and viewer
         run: |
+          python -B tests/build_patch_checks.py build/LibRaw-0.21.2.tar.gz
+          if ($LASTEXITCODE -ne 0) { throw 'LibRaw patch regression checks failed' }
           python -B tests/local_checks.py
           if ($LASTEXITCODE -ne 0) { throw 'Service checks failed' }
           node --test web/tests/viewer.test.cjs

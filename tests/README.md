@@ -1,5 +1,9 @@
 # Decoder verification
 
+`python -B tests/build_patch_checks.py build/LibRaw-0.21.2.tar.gz` verifies the
+actual build patch with all four Windows/Unix script/source line-ending
+combinations, repeated application, and rejection of an unexpected source.
+
 Windows release package checks: `python -B tests/package_checks.py
 build/TTC-windows-x64.zip` extracts into a temporary folder containing spaces
 and Swedish characters. It checks file hashes and removed payloads, launches

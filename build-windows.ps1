@@ -85,10 +85,11 @@ if (!(Test-Path -LiteralPath (Join-Path $rawRoot 'Makefile.mingw'))) {
 function Enable-SelectiveDngTiles {
     param([string]$LibRawRoot)
     $path = Join-Path $LibRawRoot 'src/decoders/dng.cpp'
-    $source = Get-Content -LiteralPath $path -Raw
+    # Git checkout and downloaded archives may use different line endings.
+    $source = (Get-Content -LiteralPath $path -Raw).Replace("`r`n", "`n")
     if ($source -notmatch 'ttc_selective_dng_tile_needed') {
         $source = $source -replace '#include "../../internal/dcraw_defs.h"',
-            "#include `"../../internal/dcraw_defs.h`"`r`n`r`nextern `"C`" int ttc_selective_dng_tile_needed(unsigned x, unsigned y, unsigned w, unsigned h);"
+            "#include `"../../internal/dcraw_defs.h`"`n`nextern `"C`" int ttc_selective_dng_tile_needed(unsigned x, unsigned y, unsigned w, unsigned h);"
         $needle = @'
     if (tile_length < INT_MAX)
       fseek(ifp, get4(), SEEK_SET);
@@ -108,6 +109,8 @@ function Enable-SelectiveDngTiles {
     if (!ljpeg_start(&jh, 0))
       break;
 '@
+        $needle = $needle.Replace("`r`n", "`n")
+        $replacement = $replacement.Replace("`r`n", "`n")
         if (-not $source.Contains($needle)) {
             throw "LibRaw dng.cpp did not match selective tile patch context."
         }

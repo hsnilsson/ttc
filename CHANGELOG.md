@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   portable package; retain automatic target detection and the private runtime.
 - Smoke-test the packaged executable's local UI, session and clean shutdown.
 
+### Fixed
+
+- Apply the pinned LibRaw source patch regardless of Windows/Unix line endings,
+  including fresh GitHub Windows release builds.
+
 ## [1.2.0] - 2026-02-22
 
 ### Changed
