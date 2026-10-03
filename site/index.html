@@ -21,7 +21,7 @@
     <p>Made for the fiddly part: sorting through repeated captures and comparing the same small details in each one.</p>
     <a class="button" href="demo/">Try the online demo <span aria-hidden="true">→</span></a>
     <a class="button" href="https://github.com/hsnilsson/ttc/releases/latest">Download TTC for Windows <span aria-hidden="true">↗</span></a>
-    <p class="download-note">Portable ZIP · Windows x64<br>No Python installation. Runs on your computer.</p>
+    <p class="download-note">Portable ZIP · Windows x64<br><a href="https://github.com/hsnilsson/ttc/releases/tag/v1.3.2">v1.3.2</a> · 51.9 MB download<br>No Python installation. Runs on your computer.</p>
   </div>
   <figure class="target-image"><a href="images/vlad-roi-overlay.jpg" aria-label="View the test target at full size"><img src="images/vlad-roi-overlay.jpg" alt="Vlad’s printed test target with TTC’s five measurement boxes at the center and corners" width="1265" height="845"></a><figcaption><span class="figure-label">The target</span> Five small regions, measured in every capture. <a href="images/vlad-roi-overlay.jpg">View full size ↗</a></figcaption></figure>
 </section>
@@ -31,10 +31,10 @@
   <p class="comparison-limit">TTC measures relative detail in rendered images. The target, focus, vibration and rendering affect the result; a score alone cannot diagnose a lens or an alignment problem.</p>
 </section>
 <section class="wrap section" id="start"><div class="section-heading"><p class="eyebrow">Using TTC</p><h2>Open a folder of target shots.</h2></div>
-<p><a href="demo/">Try the interactive demo</a> to see the app before downloading. It uses example target images with simulated processing times and scores. The download analyzes your own captures. Start with a small series to check the workflow before processing large DNGs.</p>
+<p><a href="demo/">Try the interactive demo</a> to see the app before downloading. It uses example target images with simulated processing times and scores. The download analyzes your own captures. Downloadable builds currently support Windows x64; Linux and macOS packages are not yet available. Start with a small series to check the workflow before processing large DNGs.</p>
 <ol class="steps">
-  <li><h3>Download & extract</h3><p>Open <a href="https://github.com/hsnilsson/ttc/releases/latest">the latest release</a> and choose <strong>TTC-windows-x64.zip</strong> under Assets. Extract the entire ZIP to a writable folder with plenty of free space. Keep all its files together. No Python installation is needed.</p></li>
-  <li><h3>Launch locally</h3><p>Double-click <strong>TTC.exe</strong> in the extracted folder. It opens TTC in your browser at <strong>127.0.0.1</strong>, your own computer. For visible diagnostics, open a terminal in that folder and run <code>.\ttc.cmd serve</code>.</p></li>
+  <li><h3>Download & extract</h3><p>Open <a href="https://github.com/hsnilsson/ttc/releases/latest">the latest release</a> and choose <strong>TTC-windows-x64.zip</strong> under Assets. Extract the entire ZIP to a writable folder with plenty of free space. Keep all its files together: TTC.exe needs the bundled runtime and processing files beside it. No Python installation is needed.</p></li>
+  <li><h3>Launch locally</h3><p>Double-click <strong>TTC.exe</strong> in the extracted folder. It opens TTC in your browser at <strong>127.0.0.1</strong>, your own computer. If startup fails, check <code>build/ttc-launch.log</code> inside that folder. For visible diagnostics, open a terminal there and run <code>.\ttc.cmd serve</code>.</p></li>
   <li><h3>Open your series</h3><p>Choose <strong>Browse folders</strong>, select the folder containing your target shots, then <strong>Use this folder</strong> and <strong>Open & compare automatically</strong>. TTC imports the series, detects five regions and runs the comparison.</p></li>
 </ol>
 <div class="note"><strong>Check before trusting the result.</strong> Review the aperture assignments and five measurement boxes. Correct missing f-stops and save corrections. If detection stops, use <strong>Define regions manually</strong>, position all five boxes, save and run the comparison. Test a small series first: high-resolution DNGs need several GB of RAM and substantial output space.</div>
@@ -61,7 +61,7 @@
 </div>
 </section>
 <section class="wrap section" id="safety"><div class="section-heading"><p class="eyebrow">Before you run it</p><h2>A local app, an unsigned download.</h2></div>
-<p>The download contains a native Windows executable plus a private Python runtime. It is <strong>unsigned</strong>, so Windows may show a reputation warning. Do not disable antivirus or bypass your organization’s policies to run it. You can inspect the <a href="https://github.com/hsnilsson/ttc">source</a>, <a href="https://github.com/hsnilsson/ttc/actions/workflows/release.yml">release build</a> and <a href="https://github.com/hsnilsson/ttc/blob/main/docs/local-distribution.md">packaging details</a> before deciding.</p>
+<p>The download contains the native TTC.exe launcher, a processing executable and a private Python runtime. It is <strong>unsigned</strong>, so Windows may show a reputation warning. Do not disable antivirus or bypass your organization’s policies to run it. You can inspect the <a href="https://github.com/hsnilsson/ttc">source</a>, <a href="https://github.com/hsnilsson/ttc/actions/workflows/release.yml">release build</a> and <a href="https://github.com/hsnilsson/ttc/blob/main/docs/local-distribution.md">packaging details</a> before deciding.</p>
 <div class="reading">
 <div><h3>No image upload</h3><p>The guide has no analytics, scripts or upload form. The optional demo runs JavaScript in your browser and loads only published example assets; it cannot browse your computer or analyze your files. The downloaded app processes images on your computer and binds its server to 127.0.0.1. It checks request host/origin and requires a session token for changes. Once downloaded, processing needs no internet connection.</p></div>
 <div><h3>Control what it can access</h3><p>Run as a normal user; administrator rights are not needed for TTC. The app reads originals and writes previews, crops and reports into its workspace. A local program still has your user account’s file permissions. Start with copies of non-sensitive target captures.</p></div>
@@ -69,7 +69,7 @@
 <details><summary>Verify your download before launching</summary>
 <p>Download <strong>SHA256SUMS.txt</strong> alongside the ZIP from the same release. In PowerShell, run:</p>
 <pre><code>Get-FileHash .\TTC-windows-x64.zip -Algorithm SHA256</code></pre>
-<p>Compare the complete hash with the entry in SHA256SUMS.txt. A mismatch means stop and download again. A matching checksum confirms the bytes match that published file; it is not a malware scan or a safety guarantee. Releases built by the new workflow also carry a GitHub build-provenance attestation.</p>
+<p>Compare the complete hash with the entry in SHA256SUMS.txt. A mismatch means stop and download again. A matching checksum confirms the bytes match that published file; it is not a malware scan or a safety guarantee. The release workflow also publishes a GitHub build-provenance attestation for the ZIP.</p>
 </details>
 <details><summary>Recommended first trial: Windows Sandbox or a disposable VM</summary>
 <p>If your Windows edition supports <a href="https://learn.microsoft.com/en-us/windows/security/application-security/application-isolation/windows-sandbox/">Windows Sandbox</a>, use it for a cautious trial. Otherwise use a disposable virtual machine. Prepare a dedicated folder containing only the downloaded ZIP and a few non-sensitive test captures; do not expose your full photo library.</p>
