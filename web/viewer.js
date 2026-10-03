@@ -80,20 +80,24 @@
     const best=Math.max(...totals.filter(t=>Number.isFinite(t.value)).map(t=>t.value));
     return totals.map(t=>({...t,best:Number.isFinite(t.value)&&Math.abs(t.value-best)<=Number.EPSILON*Math.max(1,Math.abs(best))*8}));
   }
-  const api = {TABLE_REGIONS, sharpnessRange, sharpnessTotals, REGIONS, valid, color, groups, escape, normalize, apertureEdits, manualRois, roiLabelClass, RoiHistory, compositeLayout, crc32, progressValue};
+  const api = {TABLE_REGIONS, sharpnessRange, sharpnessTotals, REGIONS, valid, color, groups, escape, normalize, apertureEdits, manualRois, roiLabelClass, RoiHistory, compositeLayout, crc32, progressValue, zipStore};
   if (typeof module !== 'undefined') module.exports=api;
   if (typeof document === 'undefined') return;
   let manifest={captures:[],apertures:[],rois:[]}, offline=false, apertureIndex=0, region='center', repeatId=null, zoom=1, pan={x:0,y:0}, focused=false, polling=null, token=null, jobId=null, pendingExport=false, setupOpen=true, manualDraft=false, folderPath="", requestPending=false, configDirty=false;
   let roiHistory=null, roiZoom=1, compositeRenderToken=0, compositePrewarmRunning=false;
   const compositeCache=new Map(),compositePending=new Map();
   const root=document.getElementById('app');
+  // Only the public demo entry point installs a simulated transport. The local
+  // app and exported reports continue to use their existing paths.
+  const demo=window.TTC_DEMO;
+  if(demo){folderPath=demo.folder;demo.setZipWriter(zipStore);}
   const embedded=window.TTC_MANIFEST || JSON.parse(document.getElementById('ttc-manifest').textContent);
   const fmt=n=>Number.isFinite(n)?Number(n).toLocaleString(undefined,{maximumSignificantDigits:4}):'—';
   const measurement=(capture,r)=>capture?.measurements?.[r];
   const selectedCaptureForGroup=g=>g?.captures.find(c=>c.id===g.selectedCaptureId)||g?.captures[0];
   const selected=()=>{const g=groups(manifest)[apertureIndex];return g?.captures.find(c=>c.id===(repeatId||g.selectedCaptureId))||selectedCaptureForGroup(g);};
   function error(e){document.getElementById('message').textContent=e.message||String(e);}
-  async function request(path,body){const response=await fetch('/api/'+path,{method:body===undefined?'GET':'POST',headers:body===undefined?{}:{'Content-Type':'application/json','X-TTC-Token':token},body:body===undefined?undefined:JSON.stringify(body)});if(!response.ok){const message=await response.text();let detail;try{detail=JSON.parse(message).error;}catch{}throw Error(detail||message);}return response.json();}
+  async function request(path,body){if(demo)return demo.request(path,body);const response=await fetch('/api/'+path,{method:body===undefined?'GET':'POST',headers:body===undefined?{}:{'Content-Type':'application/json','X-TTC-Token':token},body:body===undefined?undefined:JSON.stringify(body)});if(!response.ok){const message=await response.text();let detail;try{detail=JSON.parse(message).error;}catch{}throw Error(detail||message);}return response.json();}
   async function browseFolders(){
     const input=document.getElementById('folder');
     const dialog=document.createElement('dialog');
@@ -101,6 +105,7 @@
     dialog.setAttribute('aria-labelledby','folder-title');
     dialog.innerHTML='<h2 id="folder-title">Choose an image folder</h2><p>Browse this computer. Images stay local.</p><div class="bar"><label class="folder-location">Location <input id="folder-location" autocomplete="off"></label><button id="folder-go">Go</button></div><div id="folder-roots" class="bar"></div><p id="folder-status" role="status"></p><div id="folder-list" class="folder-list"></div><div class="bar"><button id="folder-use" class="primary" disabled>Use this folder</button><button id="folder-close">Cancel</button></div>';
     document.body.append(dialog);
+    if(demo)dialog.querySelector('p').textContent='Browse the simulated demo computer. This does not access your folders.';
     const location=dialog.querySelector('#folder-location'),status=dialog.querySelector('#folder-status'),list=dialog.querySelector('#folder-list'),use=dialog.querySelector('#folder-use'),go=dialog.querySelector('#folder-go');
     let current=null,sequence=0;
     dialog.addEventListener('close',()=>{sequence++;dialog.remove();document.getElementById('browse')?.focus();});
@@ -129,7 +134,7 @@
     location.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();load(location.value);}};
     location.value=input.value;dialog.showModal();await load(input.value);
   }
-  function accept(snapshot){jobId=snapshot.id||jobId;if(jobId)sessionStorage.setItem('ttc-job',jobId);manifest=normalize(snapshot.result||snapshot.manifest||snapshot);if(snapshot.result)manifest.job={status:snapshot.status,message:snapshot.error||snapshot.progress?.message,progress:progressValue(snapshot.progress)};render();if(pendingExport&&snapshot.status!=='running'){pendingExport=false;if(manifest.export_url){const link=document.createElement('a');link.href=manifest.export_url;link.download='';link.click();}}}
+  function accept(snapshot){jobId=snapshot.id||jobId;if(jobId&&!demo)sessionStorage.setItem('ttc-job',jobId);manifest=normalize(snapshot.result||snapshot.manifest||snapshot);if(snapshot.result)manifest.job={status:snapshot.status,message:snapshot.error||snapshot.progress?.message,progress:progressValue(snapshot.progress)};render();if(pendingExport&&snapshot.status!=='running'){pendingExport=false;if(manifest.export_url){const link=document.createElement('a');link.href=manifest.export_url;link.download=demo?'ttc-demo-report.zip':'';link.click();}}}
   async function action(path,body){
     if(requestPending)return;
     requestPending=true;
@@ -157,6 +162,12 @@
     const unknown=manifest.captures.filter(c=>!(Number(c.aperture)>0));
     if(unknown.length)root.insertAdjacentHTML('beforeend',`<section class="panel"><h2>Unassigned aperture · ${unknown.length} captures</h2><p class="muted">These captures are retained but excluded from the aperture summary. Correct their aperture in the local app.</p>${unknown.map(c=>`<p><strong>${escape(c.name||c.id)}</strong> ${escape((c.flags||[]).join(' · '))}</p><div class="bar">${REGIONS.map(r=>measurement(c,r)?.crop?`<a href="${escape(measurement(c,r).crop.url)}" download>${LABELS[r]} crop</a>`:'').join('')}</div>`).join('')}</section>`);
     if(!offline)root.insertAdjacentHTML("beforeend",'<button id="quit">Stop local service</button>');
+    if(demo){
+      document.getElementById('quit').textContent='Restart demo';
+      root.querySelector('details > p').textContent='Use the sample folder on the simulated computer. Timings, detection and scores are simulated; target images come from an example capture series.';
+      const fullExport=document.getElementById('full-export');
+      if(fullExport){fullExport.disabled=true;fullExport.parentElement.nextElementSibling.textContent='The demo exports example crops; full source images are available only in the downloaded app.';}
+    }
     bind();renderCrops();
     if(configDirty){
       root.querySelectorAll('[data-aperture],[data-roi-id],#tracking-radius').forEach(el=>{const value=draft.find(d=>d.id===el.id&&d.aperture===el.dataset.aperture&&d.roi===el.dataset.roiId&&d.field===el.dataset.field);if(value)el.value=value.value;});
@@ -328,5 +339,5 @@
   }
   document.addEventListener('keydown',e=>{if(document.querySelector('dialog[open]')||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)||e.ctrlKey||e.metaKey||e.altKey||!groups(manifest).length)return;if(['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();changeAperture(e.key==='ArrowLeft'?-1:1);}if(['[',']'].includes(e.key)){const cs=groups(manifest)[apertureIndex].captures;const i=cs.findIndex(c=>c.id===selected().id);repeatId=cs[(i+(e.key==='['?-1:1)+cs.length)%cs.length].id;render();}});
   if(embedded){offline=true;manifest=normalize(embedded);document.getElementById('mode').textContent='Offline report';render();}
-  else{render();request('session').then(async session=>{token=session.token;jobId=new URLSearchParams(window.location.search).get('job')||sessionStorage.getItem('ttc-job');let snapshot;try{snapshot=await request(jobId?'jobs/'+encodeURIComponent(jobId):'state');}catch{sessionStorage.removeItem('ttc-job');snapshot=await request('state');}if(snapshot)accept(snapshot);}).catch(()=>error('Local engine unavailable. Start the TTC local app to open images.'));polling=setInterval(async()=>{if(manifest.job?.status!=='running'||!jobId)return;try{accept(await request('jobs/'+encodeURIComponent(jobId)));}catch(e){error(e);}},1500);}
+  else{render();request('session').then(async session=>{token=session.token;jobId=demo?null:new URLSearchParams(window.location.search).get('job')||sessionStorage.getItem('ttc-job');let snapshot;try{snapshot=await request(jobId?'jobs/'+encodeURIComponent(jobId):'state');}catch{if(!demo)sessionStorage.removeItem('ttc-job');snapshot=await request('state');}if(snapshot)accept(snapshot);}).catch(e=>error(demo?'Could not load demo: '+e.message:'Local engine unavailable. Start the TTC local app to open images.'));polling=setInterval(async()=>{if(manifest.job?.status!=='running'||!jobId)return;try{accept(await request('jobs/'+encodeURIComponent(jobId)));}catch(e){error(e);}},demo?200:1500);}
 })();

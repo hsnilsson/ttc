@@ -1,15 +1,18 @@
 # Public guide and download delivery
 
 The public guide is in `site/`; the loopback application stays in `web/`.
-`scripts/build-pages.ps1` stages only the guide, stylesheet and two explicitly
-selected README screenshots. It does not publish local jobs, captures, reports,
-build tools or executable files. Use a fresh output destination for each build.
+`scripts/build-pages.ps1` stages the guide, stylesheet, two explicitly selected
+README screenshots and the browser demo at `demo/`. It does not publish DNGs,
+local jobs, native logs, build tools or executable files. Use a fresh output
+destination for each build.
 
 The Pages workflow deploys main through the `github-pages` environment. Enable
 GitHub Actions as the repository's Pages source. The public address is
 https://hsnilsson.github.io/ttc/. There are no browser scripts, external fonts,
 tracking or image uploads in the guide. A restrictive HTML CSP blocks script,
-object, form and connection requests. GitHub Pages supplies hosting headers;
+object, form and connection requests. The optional demo has a separate policy
+allowing same-origin scripts/assets and local blob images for merged crops;
+it has no analytics, uploads or native backend. GitHub Pages supplies hosting headers;
 the HTML policy is not a replacement for a full HTTP-header policy.
 
 Release builds use the existing Windows native builder and portable packager,
@@ -34,3 +37,43 @@ Validation for the initial guide:
 The Windows Sandbox configuration is documented using Microsoft's supported
 options. A live Sandbox run and a separate clean Windows machine were not
 tested in this task. Large PS16 memory needs still depend on the capture size.
+
+## Interactive online demo
+
+`site/demo/index.html` explicitly installs `demo.js` before the shared
+`web/viewer.js`. Pages staging copies the current viewer, stylesheet and report
+template into the demo, so its layout and interaction controls stay in sync with
+the local application. Production and offline entry points do not load the
+simulated transport. The demo does not call `/api/`, read session storage or
+browse visitors' files; its folder picker shows a fictitious `D:\Demo captures`.
+Reloading or Restart demo starts a fresh session.
+
+Import, preview/detection, comparison, cancellation, ROI/aperture corrections,
+whole-capture selection and offline-report export are simulated in browser
+memory. Stage delays are illustrative, never a performance benchmark. Scores
+are deterministic example numbers; corrections alter the simulated setup but
+reuse published example crops and illustrative scores. The page and exported
+reports retain an explicit simulation warning. Full source-image export is
+unavailable in this demo. Crop ZIPs and offline example reports are real browser
+downloads assembled from the published assets.
+
+The sample uses all 16 DNG capture labels and aperture assignments from the
+user-selected series, starting with `_DSC3982-_DSC3997.dng`. Eight apertures have
+two repeats each. A fresh native preview of the supplied reference DNG was
+verified pixel-for-pixel against the selected existing TTC job. That job's
+native log establishes each source filename. The overview and 80 aligned crops
+are converted to lossless WebP, preserving crop dimensions and decoded pixels;
+all 80 conversions were verified pixel-for-pixel. No original DNGs, private
+source paths, EXIF metadata or native measurements are included. The complete
+example image set is about 68 MB; detail assets load when comparison runs,
+and repeat crops load when selected or exported.
+
+To regenerate assets with Pillow, render the source reference using the same
+native engine as the selected job, then run `scripts/build-demo-assets.py` with
+`--source-dir`, `--job-dir`, `--destination` (a fresh folder) and
+`--reference-preview`. Review the generated sample and copy only `assets/`
+and `sample.json` into `site/demo/`.
+
+Run `node --test web/tests/viewer.test.cjs web/tests/demo.test.cjs` and syntax
+checks for both JavaScript entry points. Stage with `scripts/build-pages.ps1`
+and serve the resulting directory to check the guide and demo together.

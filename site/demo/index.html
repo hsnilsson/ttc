@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Try TTC in your browser before downloading. Explore a simulated capture workflow using example target images.">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <title>TTC · Interactive demo</title>
+  <link rel="stylesheet" href="viewer.css">
+  <link rel="stylesheet" href="demo.css">
+</head>
+<body>
+<header><a class="brand" href="../">TTC <span>- Test Target Cropper</span></a><span id="mode">Online demo</span></header>
+<aside class="demo-notice" aria-label="About this simulation">
+  <div><strong>Try TTC before downloading</strong><p>This is the TTC interface with a simulated computer, processing times and scores. The example target and crops come from a real capture series. No access to your files, no uploads.</p><p>Choose <strong>Open &amp; compare automatically</strong> to try the whole workflow, or browse and run each step yourself. Downloaded demo reports keep their simulation label.</p></div>
+  <div class="bar"><a class="button" href="https://github.com/hsnilsson/ttc/releases/latest">Download TTC for Windows ↗</a><a href="../">Back to guide</a></div>
+</aside>
+<main id="app"><noscript>Enable JavaScript to try the simulation. You can also download TTC using the link above.</noscript></main>
+<script id="ttc-manifest" type="application/json">null</script>
+<script src="demo.js"></script>
+<script src="viewer.js"></script>
+</body>
+</html>

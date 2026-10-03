@@ -2,6 +2,8 @@
 
 **New to TTC?** Read the [getting-started website](https://hsnilsson.github.io/ttc/)
 for the capture recipe, aperture comparison walkthrough and safety guidance.
+Try the [interactive online demo](https://hsnilsson.github.io/ttc/demo/) before
+downloading: the real viewer with example target images and simulated processing.
 Download the portable Windows x64 ZIP from [GitHub Releases](https://github.com/hsnilsson/ttc/releases/latest),
 extract it completely, then launch `Launch TTC.vbs` (or `ttc.cmd serve`).
 The executable and private runtime are included; processing stays on your computer.

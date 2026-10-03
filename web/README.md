@@ -52,6 +52,12 @@ not claim a screen position when a scan is rotated.
 
 ## Verification
 
+The public online demo installs an explicit `window.TTC_DEMO` transport from
+`site/demo/demo.js`. It reuses this viewer and stylesheet, with an in-memory
+fake computer and jobs. Local and offline entry points do not install it.
+Run `node --test web/tests/demo.test.cjs` for simulated workflow/export checks.
+See `docs/pages-publication.md` for asset provenance and Pages staging.
+
 Run `node --test web/tests/viewer.test.cjs` and `node --check web/viewer.js`.
 For explicit synthetic browser QA only, run `node web/tests/serve-fixture.cjs`
 and open `http://127.0.0.1:8766`. The fixture is never loaded by production.
