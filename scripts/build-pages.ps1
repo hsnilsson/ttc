@@ -21,4 +21,12 @@ foreach ($name in @('viewer.js', 'viewer.css', 'report.html')) {
     Copy-Item -LiteralPath (Join-Path $root "web/$name") -Destination $demo
 }
 Copy-Item -LiteralPath (Join-Path $root 'site/demo/assets') -Destination $demo -Recurse
+# Pages/browser caches must not pair a new demo with an older transport.
+$demoIndex = Join-Path $demo 'index.html'
+$html = [System.IO.File]::ReadAllText($demoIndex)
+foreach ($name in @('demo.js', 'demo.css', 'viewer.js', 'viewer.css')) {
+    $version = (Get-FileHash -LiteralPath (Join-Path $demo $name) -Algorithm SHA256).Hash.ToLower().Substring(0, 12)
+    $html = $html.Replace('"' + $name + '"', '"' + $name + '?v=' + $version + '"')
+}
+[System.IO.File]::WriteAllText($demoIndex, $html, [System.Text.UTF8Encoding]::new($false))
 New-Item -ItemType File -Path (Join-Path $output '.nojekyll') | Out-Null

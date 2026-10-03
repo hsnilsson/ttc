@@ -46,7 +46,9 @@ template into the demo, so its layout and interaction controls stay in sync with
 the local application. Production and offline entry points do not load the
 simulated transport. The demo does not call `/api/`, read session storage or
 browse visitors' files; its folder picker shows a fictitious `D:\Demo captures`.
-Reloading or Restart demo starts a fresh session.
+Reloading or Restart demo starts a fresh session. Staging versions the demo's
+script and stylesheet URLs with their content hashes so browser caches cannot
+reuse an older transport after deployment.
 
 Import, preview/detection, comparison, cancellation, ROI/aperture corrections,
 whole-capture selection and offline-report export are simulated in browser
