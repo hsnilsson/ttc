@@ -1,6 +1,7 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path');
+const vm=require('node:vm');
 const {createDemo,FOLDER,WARNING}=require('../../site/demo/demo.js');
 const {zipStore}=require('../viewer.js');
 const sample=()=>JSON.parse(fs.readFileSync(path.join(__dirname,'../../site/demo/sample.json'),'utf8'));
@@ -100,6 +101,19 @@ test('cancelling an in-flight export cannot publish stale report contents',async
   await open(h.demo,true);await h.finish();await h.demo.request('jobs/demo/export',{});await h.demo.request('jobs/demo/cancel',{});
   resume(new Response('asset'));await new Promise(resolve=>setImmediate(resolve));
   const done=await h.demo.request('state');assert.equal(done.status,'cancelled');assert.equal(done.result.export_url,undefined);
+});
+test('browser entry point exports when the sample loads before the viewer registers its ZIP writer',async()=>{
+  const queue=new Map();let serial=0,output;
+  const context={document:{},window:{},Blob,URL,TextEncoder,fetch:async url=>url==='sample.json'?new Response(JSON.stringify(sample())):new Response(url==='report.html'?'>null</script>':'example asset'),setTimeout:fn=>{queue.set(++serial,fn);return serial;},clearTimeout:id=>queue.delete(id)};
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../../site/demo/demo.js'),'utf8'),context);
+  // Resolve sample loading before simulating the later viewer.js initialization.
+  await new Promise(resolve=>setImmediate(resolve));
+  const facade=context.window.TTC_DEMO;facade.setZipWriter(files=>{output=zipStore(files);return output;});
+  await open(facade,true);
+  while(queue.size){const [id,fn]=queue.entries().next().value;queue.delete(id);fn();}
+  await facade.request('jobs/demo/export',{});
+  for(let i=0;i<200&&!output;i++)await new Promise(resolve=>setImmediate(resolve));
+  assert.ok(output);assert.equal((await facade.request('state')).status,'complete');
 });
 test('published sample contains only relative, existing example assets and simulation scores',()=>{
   const data=sample(),serialized=JSON.stringify(data);assert.equal(/(?:[A-Z]:\\|\/jobs\/|native\.log|input_dir)/i.test(serialized),false);

@@ -77,3 +77,12 @@ and `sample.json` into `site/demo/`.
 Run `node --test web/tests/viewer.test.cjs web/tests/demo.test.cjs` and syntax
 checks for both JavaScript entry points. Stage with `scripts/build-pages.ps1`
 and serve the resulting directory to check the guide and demo together.
+
+Demo validation: 29 viewer/demo checks and all 11 local-service checks passed,
+including native archive coverage. The staged Pages payload contains exactly
+93 public files; shared viewer assets match their production sources. A real
+68 MB example report ZIP passed CRC, manifest, privacy and all 80 crop-dimension
+checks. Live browser checks covered fake folder browsing, automatic comparison,
+heatmap/crop rendering, repeat override, retained zoom, ROI saves, cancellation
+and a 390 px layout. A sample-before-viewer loading-order regression test covers
+ZIP-writer registration for report downloads.

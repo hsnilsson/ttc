@@ -122,5 +122,5 @@
   const sample=fetch('sample.json').then(r=>{if(!r.ok)throw Error('Example series unavailable.');return r.json();});
   let writeZip;
   const instance=sample.then(data=>{const demo=createDemo(data);demo.setZipWriter(writeZip);return demo;});
-  window.TTC_DEMO={folder:FOLDER,setZipWriter:writer=>{writeZip=writer;},request:async(path,body)=>(await instance).request(path,body)};
+  window.TTC_DEMO={folder:FOLDER,setZipWriter:writer=>{writeZip=writer;},request:async(path,body)=>{const demo=await instance;demo.setZipWriter(writeZip);return demo.request(path,body);}};
 })();
