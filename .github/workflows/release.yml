@@ -53,6 +53,8 @@ jobs:
           $runtime = python -c "import sys; print(sys.base_prefix)"
           python -B local/package_windows.py --runtime "$runtime" --engine build/ttc-simple.exe --licenses build/licenses --output build/TTC-windows-x64 --zip
           if ($LASTEXITCODE -ne 0) { throw 'Portable packaging failed' }
+          python -B tests/package_checks.py build/TTC-windows-x64.zip
+          if ($LASTEXITCODE -ne 0) { throw 'Extracted package checks failed' }
           $hash = (Get-FileHash build/TTC-windows-x64.zip -Algorithm SHA256).Hash.ToLowerInvariant()
           "$hash  TTC-windows-x64.zip" | Set-Content build/SHA256SUMS.txt -Encoding ascii
       - name: Attest package provenance
@@ -71,7 +73,7 @@ jobs:
           generate_release_notes: true
           body: |
             Download **TTC-windows-x64.zip** (not the source-code archives), verify it against **SHA256SUMS.txt**, and extract the complete folder.
-            Launch **Launch TTC.vbs** or run **ttc.cmd serve**. Windows x64; no Python installation required.
+            Launch **TTC.exe** or run **ttc.cmd serve**. Keep the complete extracted folder together. Windows x64; no Python installation required.
 
             This package is unsigned. Checksums detect changed bytes; they do not guarantee safety. GitHub build provenance is attached to the ZIP.
             For a cautious first run, use Windows Sandbox or a disposable VM with networking disabled and only a read-only folder of test captures.

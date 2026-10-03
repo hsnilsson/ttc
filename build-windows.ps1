@@ -4,7 +4,7 @@ Build TTC for Windows using pinned, local dependencies.
 .DESCRIPTION
 Bootstraps w64devkit 2.10.0, LibRaw 0.21.2 and libdeflate 1.25 under
 the ignored build directory. Verifies SHA256 archives before extraction.
-Builds a static build/ttc-simple.exe and collects build/licenses notices.
+Builds static build/ttc-simple.exe and build/TTC.exe and collects build/licenses notices.
 Requires Windows PowerShell 5.1+ and Windows tar.exe. Downloads require HTTPS.
 Dependencies are compiled with two jobs; image processing stays sequential.
 .PARAMETER NoDownload
@@ -154,6 +154,9 @@ try {
         (Join-Path $PSScriptRoot 'ttc-simple.c'), '-o', $executable,
         $rawLibrary, $deflateLibrary, '-lstdc++', '-lws2_32') + $linkFlags
     Invoke-Checked $gcc $arguments
+    Invoke-Checked $gcc @('-std=c99', '-O2', '-Wall', '-Wextra', '-Werror', '-static',
+        '-municode', '-mwindows', '-s', (Join-Path $PSScriptRoot 'local/ttc_launcher.c'),
+        '-o', (Join-Path $buildRoot 'TTC.exe'))
 
     $licenses = Join-Path $buildRoot 'licenses'
     New-Item -ItemType Directory -Force -Path $licenses | Out-Null
@@ -179,7 +182,7 @@ GCC runtime: https://www.gnu.org/licenses/gcc-exception-3.1.en.html
 Ship this notices directory with the executable and retain applicable source availability.
 "@ | Set-Content -LiteralPath (Join-Path $licenses 'DEPENDENCIES.txt') -Encoding UTF8
     Invoke-Checked $executable @('--help')
-    Write-Host "Built $executable (LibRaw $mode). Distribution notices: $licenses"
+    Write-Host "Built $executable (LibRaw $mode) and build/TTC.exe. Distribution notices: $licenses"
 } finally {
     $env:PATH = $savedPath
 }

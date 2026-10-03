@@ -3,7 +3,7 @@
 **New to TTC?** Read the [getting-started website](https://hsnilsson.github.io/ttc/)
 for the capture recipe, aperture comparison walkthrough and safety guidance.
 Download the portable Windows x64 ZIP from [GitHub Releases](https://github.com/hsnilsson/ttc/releases/latest),
-extract it completely, then launch `Launch TTC.vbs` (or `ttc.cmd serve`).
+extract it completely, then launch `TTC.exe` (or `ttc.cmd serve`).
 The executable and private runtime are included; processing stays on your computer.
 
 TTC is a local tool for comparing lens sharpness and sensor/film flatness from

@@ -1,5 +1,12 @@
 # Decoder verification
 
+Windows release package checks: `python -B tests/package_checks.py
+build/TTC-windows-x64.zip` extracts into a temporary folder containing spaces
+and Swedish characters. It checks file hashes and removed payloads, launches
+`TTC.exe` without developer Python/PATH dependencies, analyzes synthetic PNGs
+through the actual local API/native engine, exports a private-path-free report,
+and verifies clean shutdown and child cleanup when the launcher is terminated.
+
 Local service checks: `python tests/local_checks.py` verifies request/path
 guards, aperture fallback, whole-capture selection and repeat spread. With
 `build/ttc-simple.exe` present it also exercises native analysis, manual edits,

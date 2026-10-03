@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Launch the portable Windows browser app with native `TTC.exe`, with visible
+  startup/runtime errors and a local diagnostic log.
+- Omit the Python installer, unused Tcl/Tk files and OpenCV video DLL from the
+  portable package; retain automatic target detection and the private runtime.
+- Smoke-test the packaged executable's local UI, session and clean shutdown.
+
 ## [1.2.0] - 2026-02-22
 
 ### Changed
