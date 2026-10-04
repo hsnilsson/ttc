@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Name the native command-line processor `ttc-cli.exe`; keep `TTC.exe` as the
+  main browser-app launcher.
 - Launch the portable Windows browser app with native `TTC.exe`, with visible
   startup/runtime errors and a local diagnostic log.
 - Omit the Python installer, unused Tcl/Tk files and OpenCV video DLL from the

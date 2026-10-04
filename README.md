@@ -7,6 +7,8 @@ downloading: the real viewer with example target images and simulated processing
 Download the portable Windows x64 ZIP from [GitHub Releases](https://github.com/hsnilsson/ttc/releases/latest),
 extract it completely, then launch `TTC.exe` (or `ttc.cmd serve`).
 The executable and private runtime are included; processing stays on your computer.
+`TTC.exe` opens the browser interface; `build/ttc-cli.exe` is the native
+command-line processor. Run `build/ttc-cli.exe --help` for its options.
 
 TTC is a local tool for comparing lens sharpness and sensor/film flatness from
 repeat photos of a printed test target. It finds or accepts five measurement
@@ -40,11 +42,11 @@ Run `build-simple.bat`, or from PowerShell:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\build-windows.ps1
-.\build\ttc-simple.exe 'D:\photos' -o .\output
+.\build\ttc-cli.exe 'D:\photos' -o .\output
 ```
 
 The build script downloads checksum-pinned portable tools and source dependencies
-into ignored `build/`, builds static libraries, and creates `build/ttc-simple.exe`.
+into ignored `build/`, builds static libraries, and creates `build/ttc-cli.exe`.
 It does not install system software or require `C:\libraw`. The first build needs
 network access and disk space for the compiler. Subsequent builds reuse downloads.
 The executable uses Windows system DLLs; no separately installed LibRaw or
@@ -79,9 +81,9 @@ orientation, not necessarily the entire sensor storage rectangle or DNG DefaultC
 ## Usage
 
 ```powershell
-.\build\ttc-simple.exe                 # Current directory
-.\build\ttc-simple.exe 'D:\photos'     # Directory of PNG/JPG/DNG files
-.\build\ttc-simple.exe . -o results    # Existing parent, create output directory
+.\build\ttc-cli.exe                 # Current directory
+.\build\ttc-cli.exe 'D:\photos'     # Directory of PNG/JPG/DNG files
+.\build\ttc-cli.exe . -o results    # Existing parent, create output directory
 ```
 
 The output is a square canvas: center at the top, left/right corner pairs in
@@ -92,7 +94,7 @@ than the underlying stb loader; use `.png`, `.jpg` or `.dng` inputs.
 
 ## Compare a stack with reusable ROIs
 
-`ttc-simple --analyze target.roi new-results f4.dng f5.6.dng f8.dng` applies
+`ttc-cli --analyze target.roi new-results f4.dng f5.6.dng f8.dng` applies
 named pixel-coordinate regions across a stack and produces an HTML report and
 CSV with relative sharpness, contrast, clipping, and optional translation
 tracking. See [ROI analysis usage and limitations](docs/roi-analysis.md).
@@ -114,7 +116,7 @@ errors appear in the app; no separate Windows dialog is required.
 With Python 3.10+ and the native engine built:
 
 ```powershell
-python local/ttc_local.py serve --engine build/ttc-simple.exe
+python local/ttc_local.py serve --engine build/ttc-cli.exe
 python local/ttc_local.py analyze --input 'D:\photos' --roi target.roi --output new-comparison
 ```
 

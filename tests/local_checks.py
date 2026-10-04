@@ -113,7 +113,7 @@ class Checks(unittest.TestCase):
     def test_native_job_and_portable_archive(self):
         engine=Path(__file__).parents[1]/'build'/'ttc-integrated.exe'
         if not engine.exists():
-            engine=Path(__file__).parents[1]/'build'/'ttc-simple.exe'
+            engine=Path(__file__).parents[1]/'build'/'ttc-cli.exe'
         if not engine.exists():
             self.skipTest('Build native executable to run integration coverage')
         def chunk(tag,data):

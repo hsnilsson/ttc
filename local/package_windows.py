@@ -94,7 +94,7 @@ def build(runtime: Path, engine: Path, licenses: Path, output: Path, web: Path, 
     for directory in ('Lib', 'DLLs'):
         shutil.copytree(runtime/directory, private/directory, ignore=ignored)
     (output/'build').mkdir()
-    shutil.copy2(engine, output/'build'/'ttc-simple.exe')
+    shutil.copy2(engine, output/'build'/'ttc-cli.exe')
     shutil.copy2(launcher, output/'TTC.exe')
     shutil.copytree(licenses, output/'licenses'/'native')
     shutil.copy2(ROOT/'LICENSE', output/'licenses'/'TTC-LICENSE')
@@ -119,7 +119,7 @@ def build(runtime: Path, engine: Path, licenses: Path, output: Path, web: Path, 
         shutil.copy2(ROOT/'local'/'requirements-vlad.txt', output/'licenses'/'python-deps'/'requirements-vlad.txt')
     shutil.copytree(web, output/'web', ignore=ignored)
     (output/'ttc.cmd').write_text('''@echo off
-"%~dp0runtime\\python.exe" -I -B "%~dp0local\\ttc_local.py" %* --engine "%~dp0build\\ttc-simple.exe"
+"%~dp0runtime\\python.exe" -I -B "%~dp0local\\ttc_local.py" %* --engine "%~dp0build\\ttc-cli.exe"
 exit /b %errorlevel%
 ''', encoding='utf-8')
     (output/'README.txt').write_text('''TTC local comparison — portable Windows folder
@@ -134,6 +134,8 @@ For visible diagnostics or to stop cleanly with Ctrl+C:
     ttc.cmd serve
 For CLI help:
     ttc.cmd --help
+For native processor help:
+    build\\ttc-cli.exe --help
 For CLI processing:
     ttc.cmd analyze --input "D:\\images" --roi "D:\\regions.conf" --output "D:\\new-report"
 
@@ -154,10 +156,12 @@ The native decoder and private Python runtime retain their license notices.
                            capture_output=True, text=True, timeout=30)
     if check.returncode:
         raise RuntimeError(f'Packaged runtime smoke test failed: {check.stderr}')
-    check = subprocess.run([str(output/'build'/'ttc-simple.exe'), '--help'],
+    check = subprocess.run([str(output/'build'/'ttc-cli.exe'), '--help'],
                            capture_output=True, text=True, timeout=30)
     if check.returncode:
         raise RuntimeError(f'Packaged engine smoke test failed: {check.stderr}')
+    if 'Usage: ttc-cli ' not in check.stdout:
+        raise RuntimeError('Packaged engine help does not identify ttc-cli')
     detector_check = '''import sys, tempfile
 from pathlib import Path
 import cv2, numpy as np
@@ -199,7 +203,7 @@ with tempfile.TemporaryDirectory() as tmp:
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--runtime', type=Path, required=True, help='Existing Windows CPython directory')
-    parser.add_argument('--engine', type=Path, default=ROOT/'build'/'ttc-simple.exe')
+    parser.add_argument('--engine', type=Path, default=ROOT/'build'/'ttc-cli.exe')
     parser.add_argument('--launcher', type=Path, default=ROOT/'build'/'TTC.exe')
     parser.add_argument('--licenses', type=Path, required=True, help='Native build notices directory')
     parser.add_argument('--web', type=Path, default=ROOT/'web')

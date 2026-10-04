@@ -41,15 +41,15 @@ if errorlevel 1 (
 
 echo.
 echo Extracting executable from Docker container...
-docker run --rm -v "%CD%:/output" ttc-builder cp /app/ttc-simple.exe /output/
+docker run --rm -v "%CD%:/output" ttc-builder cp /app/ttc-cli.exe /output/
 
-if exist "ttc-simple.exe" (
+if exist "ttc-cli.exe" (
     echo.
-    echo SUCCESS! ttc-simple.exe created with DNG support!
+    echo SUCCESS! ttc-cli.exe created with DNG support!
     echo.
     
     echo Testing executable:
-    ttc-simple.exe --help
+    ttc-cli.exe --help
     
 ) else (
     echo ERROR: Failed to extract executable

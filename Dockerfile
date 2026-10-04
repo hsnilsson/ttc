@@ -20,10 +20,10 @@ COPY stb_image_write.h .
 # Build with libraw support
 RUN gcc -O2 -I/usr/include/libraw \
     -DLIBRAW_BUILDLIB \
-    ttc-simple.c -o ttc-simple.exe \
+    ttc-simple.c -o ttc-cli.exe \
     -lraw -lstdc++ -lpng -ljpeg -lm
 
 # Test the executable
-RUN ./ttc-simple.exe --help
+RUN ./ttc-cli.exe --help
 
-CMD ["./ttc-simple.exe"]
+CMD ["./ttc-cli.exe"]

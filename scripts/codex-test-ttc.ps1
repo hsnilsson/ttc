@@ -42,14 +42,14 @@ function Get-Python {
     throw 'Python 3.11+ was not found. Install Python or run this from a Codex desktop environment with bundled Python.'
 }
 
-if (-not (Test-Path -LiteralPath '.\build\ttc-simple.exe')) {
-    Write-Host 'build\ttc-simple.exe is missing; building first.'
+if (-not (Test-Path -LiteralPath '.\build\ttc-cli.exe')) {
+    Write-Host 'build\ttc-cli.exe is missing; building first.'
     powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\scripts\codex-build-ttc.ps1'
     if ($LASTEXITCODE -ne 0) {
         throw "Build action failed with exit code $LASTEXITCODE."
     }
-    if (-not (Test-Path -LiteralPath '.\build\ttc-simple.exe')) {
-        throw 'Build action did not produce build\ttc-simple.exe.'
+    if (-not (Test-Path -LiteralPath '.\build\ttc-cli.exe')) {
+        throw 'Build action did not produce build\ttc-cli.exe.'
     }
 }
 

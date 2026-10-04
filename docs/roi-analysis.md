@@ -26,8 +26,8 @@ Use a pixel-coordinate image viewer to choose regions containing the same
 target feature. Save as `target.roi`, then run:
 
 ```shell
-ttc-simple --analyze target.roi comparison f4.png f5.6.png f8.png
-ttc-simple --analyze target.roi tracked-comparison --track 16 f4.dng f5.6.dng f8.dng
+ttc-cli --analyze target.roi comparison f4.png f5.6.png f8.png
+ttc-cli --analyze target.roi tracked-comparison --track 16 f4.dng f5.6.dng f8.dng
 ```
 
 Quote paths containing spaces. Pass files explicitly in the intended order;

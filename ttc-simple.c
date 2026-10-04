@@ -664,7 +664,7 @@ int main(int argc, char *argv[]) {
     if (argc > 1 && strcmp(argv[1], "--export-aligned") == 0) return image_export_cli(argc,argv,1);
     if (argc > 1 && strcmp(argv[1], "--analyze") == 0)
         return roi_cli(argc, argv);
-    printf("Test Target Cropper %s (Simple Version)\n", VERSION);
+    printf("Test Target Cropper %s (Command-line processor)\n", VERSION);
     printf("License: MIT\n");
     printf("Author: hsnilsson\n\n");
     
@@ -675,7 +675,7 @@ int main(int argc, char *argv[]) {
     // Simple argument parsing
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
-            printf("Usage: ttc-simple [INPUT_DIR] [OPTIONS]\n\n");
+            printf("Usage: ttc-cli [INPUT_DIR] [OPTIONS]\n\n");
             printf("Arguments:\n");
             printf("  INPUT_DIR    Directory containing PNG/JPG/DNG files (default: current directory)\n\n");
             printf("Options:\n");
@@ -688,16 +688,16 @@ int main(int argc, char *argv[]) {
             printf("  -h, --help              Show this help message\n");
             printf("  -v, --version           Show version information\n\n");
             printf("Examples:\n");
-            printf("  ttc-simple               Process current directory\n");
-            printf("  ttc-simple ../photos     Process parent directory\n");
-            printf("  ttc-simple . -o results  Custom output directory\n");
-            printf("  ttc-simple --use-pngs-only Only process PNG files\n\n");
+            printf("  ttc-cli               Process current directory\n");
+            printf("  ttc-cli ../photos     Process parent directory\n");
+            printf("  ttc-cli . -o results  Custom output directory\n");
+            printf("  ttc-cli --use-pngs-only Only process PNG files\n\n");
             printf("Note: This version supports PNG, JPG, BMP, GIF, DNG, etc.\n");
             printf("DNG files are processed using libraw for full resolution support.\n");
             return 0;
         }
         else if (strcmp(argv[i], "--version") == 0 || strcmp(argv[i], "-v") == 0) {
-            printf("ttc-simple %s\n", VERSION);
+            printf("ttc-cli %s\n", VERSION);
             return 0;
         }
         else if (strcmp(argv[i], "--use-pngs-only") == 0 || strcmp(argv[i], "-p") == 0) {

@@ -701,7 +701,7 @@ def make_server(manager, port=0):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command',choices=['serve','analyze'])
-    parser.add_argument('--engine',type=Path,default=ROOT/'build'/'ttc-simple.exe')
+    parser.add_argument('--engine',type=Path,default=ROOT/'build'/'ttc-cli.exe')
     parser.add_argument('--workspace',type=Path,default=ROOT/'build'/'local-jobs')
     parser.add_argument('--input'); parser.add_argument('--roi'); parser.add_argument('--output',type=Path)
     parser.add_argument('--apertures',type=Path,help='JSON object mapping filenames to corrected f-numbers')

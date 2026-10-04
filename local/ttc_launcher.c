@@ -52,7 +52,7 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE previous, PWSTR arguments, int
     *separator = L'\0';
     python = join(base, L"runtime\\python.exe");
     service = join(base, L"local\\ttc_local.py");
-    engine = join(base, L"build\\ttc-simple.exe");
+    engine = join(base, L"build\\ttc-cli.exe");
     build = join(base, L"build");
     log = join(base, L"build\\ttc-launch.log");
     if (!python || !service || !engine || !build || !log)

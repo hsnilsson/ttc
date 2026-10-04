@@ -1,6 +1,6 @@
 # TTC local contract v1
 
-Canonical UI directory: `web/`; live entry and offline template: `web/index.html`. Offline embedding replaces null inside `<script id="ttc-manifest" type="application/json">null</script>` with JSON escaped for `<`. No remote resources. Python 3.10+ stdlib launcher `python local/ttc_local.py serve --engine build/ttc-simple.exe --workspace build/local-jobs`. Portable runtime packaging documented separately.
+Canonical UI directory: `web/`; live entry and offline template: `web/index.html`. Offline embedding replaces null inside `<script id="ttc-manifest" type="application/json">null</script>` with JSON escaped for `<`. No remote resources. Python 3.10+ stdlib launcher `python local/ttc_local.py serve --engine build/ttc-cli.exe --workspace build/local-jobs`. Portable runtime packaging documented separately.
 
 HTTP binds 127.0.0.1 only. GET /api/session returns {token}; all POSTs require X-TTC-Token and application/json. Host must match bound 127.0.0.1:PORT; Origin, if supplied, must match. GET /api/state returns latest snapshot or null. GET /api/jobs/ID returns snapshot.
 

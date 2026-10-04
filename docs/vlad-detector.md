@@ -23,7 +23,7 @@ if (argc > 1 && !strcmp(argv[1], "--detect-preview"))
 ```
 
 ```text
-ttc-simple --detect-preview PREVIEW.png FULL_WIDTH FULL_HEIGHT
+ttc-cli --detect-preview PREVIEW.png FULL_WIDTH FULL_HEIGHT
 ```
 
 Use a decoded, oriented preview, preferably 1600 pixels wide, made by TTC's

@@ -73,7 +73,7 @@ Peak working set is captured before PNG verification. See
 ## Build and limitations
 
 `build-windows.ps1` pins compiler and dependency archives by SHA256, builds all
-libraries locally, and statically links `build/ttc-simple.exe`. It supports offline
+libraries locally, and statically links `build/ttc-cli.exe`. It supports offline
 archive reuse (`-NoDownload`) and keeps system/coordinator installations untouched.
 Dependency notices are collected under `build/licenses`.
 

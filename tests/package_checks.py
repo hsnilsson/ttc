@@ -72,10 +72,11 @@ class PackageChecks(unittest.TestCase):
             with self.subTest(file=relative):
                 self.assertEqual(hashlib.sha256((self.root/relative).read_bytes()).hexdigest(), expected)
         self.assertFalse(list(self.root.rglob('*.vbs')))
+        self.assertFalse(list(self.root.rglob('ttc-simple.exe')))
         self.assertEqual([p.name for p in (self.root/'runtime').glob('*.exe')], ['python.exe'])
         for pattern in ('*ffmpeg*.dll', 'tcl*.dll', 'tk*.dll', '_tkinter.pyd'):
             self.assertFalse(list(self.root.rglob(pattern)), pattern)
-        for relative in ('TTC.exe', 'runtime/LICENSE.txt', 'licenses/TTC-LICENSE',
+        for relative in ('TTC.exe', 'build/ttc-cli.exe', 'runtime/LICENSE.txt', 'licenses/TTC-LICENSE',
                          'licenses/python-deps/numpy-2.3.3.dist-info',
                          'licenses/python-deps/opencv_python_headless-4.11.0.86.dist-info'):
             self.assertTrue((self.root/relative).exists(), relative)

@@ -4,7 +4,7 @@ Build TTC for Windows using pinned, local dependencies.
 .DESCRIPTION
 Bootstraps w64devkit 2.10.0, LibRaw 0.21.2 and libdeflate 1.25 under
 the ignored build directory. Verifies SHA256 archives before extraction.
-Builds static build/ttc-simple.exe and build/TTC.exe and collects build/licenses notices.
+Builds static build/ttc-cli.exe and build/TTC.exe and collects build/licenses notices.
 Requires Windows PowerShell 5.1+ and Windows tar.exe. Downloads require HTTPS.
 Dependencies are compiled with two jobs; image processing stays sequential.
 .PARAMETER NoDownload
@@ -148,7 +148,7 @@ try {
     foreach ($library in @($rawLibrary, $deflateLibrary)) {
         if (!(Test-Path -LiteralPath $library)) { throw "Missing static library: $library" }
     }
-    $executable = Join-Path $buildRoot 'ttc-simple.exe'
+    $executable = Join-Path $buildRoot 'ttc-cli.exe'
     if (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'vlad_detector.h')) {
         $linkFlags += '-DTTC_VLAD_DETECTOR'
     }

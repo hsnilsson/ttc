@@ -53,7 +53,7 @@ jobs:
       - name: Package and smoke-test isolated runtime
         run: |
           $runtime = python -c "import sys; print(sys.base_prefix)"
-          python -B local/package_windows.py --runtime "$runtime" --engine build/ttc-simple.exe --licenses build/licenses --output build/TTC-windows-x64 --zip
+          python -B local/package_windows.py --runtime "$runtime" --engine build/ttc-cli.exe --licenses build/licenses --output build/TTC-windows-x64 --zip
           if ($LASTEXITCODE -ne 0) { throw 'Portable packaging failed' }
           python -B tests/package_checks.py build/TTC-windows-x64.zip
           if ($LASTEXITCODE -ne 0) { throw 'Extracted package checks failed' }
@@ -76,6 +76,7 @@ jobs:
           body: |
             Download **TTC-windows-x64.zip** (not the source-code archives), verify it against **SHA256SUMS.txt**, and extract the complete folder.
             Launch **TTC.exe** or run **ttc.cmd serve**. Keep the complete extracted folder together. Windows x64; no Python installation required.
+            For the native command-line processor, run **build/ttc-cli.exe --help**.
 
             This package is unsigned. Checksums detect changed bytes; they do not guarantee safety. GitHub build provenance is attached to the ZIP.
             For a cautious first run, use Windows Sandbox or a disposable VM with networking disabled and only a read-only folder of test captures.

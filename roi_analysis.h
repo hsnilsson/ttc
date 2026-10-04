@@ -233,7 +233,7 @@ static int roi_selective_windows(const Roi *rs, int n, int width, int height,
 
 static int roi_cli(int argc,char **argv) {
     if (argc<5) {
-        fprintf(stderr,"Usage: ttc-simple --analyze CONFIG NEW_OUTPUT_DIR [--track 3..32] IMAGE...\n");
+        fprintf(stderr,"Usage: ttc-cli --analyze CONFIG NEW_OUTPUT_DIR [--track 3..32] IMAGE...\n");
         return 1;
     }
     int first=4,radius=0;

@@ -13,7 +13,7 @@ and verifies clean shutdown and child cleanup when the launcher is terminated.
 
 Local service checks: `python tests/local_checks.py` verifies request/path
 guards, aperture fallback, whole-capture selection and repeat spread. With
-`build/ttc-simple.exe` present it also exercises native analysis, manual edits,
+`build/ttc-cli.exe` present it also exercises native analysis, manual edits,
 ROI invalidation, full-image export and portable ZIP assets. Build
 `tests/export_checks.c` like `tests/roi_checks.c` to check integer translations,
 black fill, extreme displacements, exclusive output creation and full-detail

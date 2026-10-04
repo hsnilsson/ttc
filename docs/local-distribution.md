@@ -27,13 +27,15 @@ First install the pinned detector dependencies into ignored `build/python-deps`:
 $runtime = python -c "import sys; print(sys.base_prefix)"
 python -B local/package_windows.py `
   --runtime "$runtime" `
-  --engine build/ttc-simple.exe `
+  --engine build/ttc-cli.exe `
   --licenses build/licenses `
   --output build/TTC-windows --zip
 ```
 
 The Windows build compiles both the engine and the small native `TTC.exe`
 launcher. `--launcher PATH` can select a separately built launcher.
+The package places `TTC.exe` at its root and the native command-line processor
+at `build/ttc-cli.exe`. Run `build/ttc-cli.exe --help` for native CLI options.
 
 The output folder and optional sibling ZIP must not exist. Required GUI assets
 are checked before creating output. The builder excludes third-party
