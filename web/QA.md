@@ -189,3 +189,27 @@ of an axis-aligned transformed bounding box.
 Eleven Node checks pass, including selected-capture-only sums, rejection of
 incomplete totals and tied winners. Browser inspection confirms the requested
 row order, a 5px gap, highest-total badge and total-row column selection.
+
+## Color-fringe validation (2026-10-05)
+
+Windows x64, isolated `codex/relative-color-fringe` implementation:
+
+- Built the native CLI against the existing checksum-pinned LibRaw 0.21.2
+  static library with w64devkit GCC; no decoder behavior changes.
+- Native fringe synthetic tests passed for sharp/blurred neutral edges, affine
+  casts, channel offsets, color/luma noise, clipping, invalid ROIs, translation,
+  horizontal/vertical symmetry and exact edge/baseline mask counts.
+- Existing native ROI checks passed, including CLI rejection rows and CSV shape.
+- 11 service checks passed with the native CLI present; fringe integration tests
+  passed for actual CSV parsing, valid/invalid regions, HTTP mask serving/private
+  asset denial, ZIP portability, legacy CSVs and missing masks.
+- 30 viewer/demo tests and JavaScript syntax checks passed. Extracted-report
+  verification checked 2 frames, 2 apertures, 8 crops and all 5 native RGBA masks.
+- Browser inspected actual live service and generated offline report: values,
+  five region selection, mask toggle, accepted/rejected capture flipping,
+  clipped crop with no overlay, and matching 128x128 loaded crop/mask elements.
+  Browser testing caught a blocked mask route; fixed and covered by HTTP tests.
+
+No real-camera repeatability/optical-accuracy claim, release package rebuild,
+new DNG reference decode, or direct file:// browser validation is made. Demo
+images remain illustrative WebPs without invented fringe measurements.

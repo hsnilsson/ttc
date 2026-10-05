@@ -91,3 +91,12 @@ build/w64devkit/bin/gcc.exe -std=c99 -O2 -fno-strict-aliasing -I. '-DTTC_SOURCE=
 Correctness checks compare decoded pixels, never compressed PNG bytes. See
 [BENCHMARKS.md](../BENCHMARKS.md) for the measured source commit and results.
 The harness is Windows-specific; no Linux test run is claimed.
+
+## Relative edge color fringe
+
+Compile `tests/fringe_checks.c` as for `tests/roi_checks.c`, then run the executable
+from the repository root. It also creates synthetic images under ignored `build/`.
+With a current `build/ttc-cli.exe`, run `python -B tests/fringe_service_checks.py`
+for native/service/portable ZIP checks; it prints a retained report directory for
+browser QA. `node web/tests/verify-report.cjs REPORT_DIR` verifies crop and mask
+PNG sizes. The synthetic fixtures contain no private captures.

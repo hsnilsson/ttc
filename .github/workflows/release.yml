@@ -46,6 +46,12 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'LibRaw patch regression checks failed' }
           python -B tests/local_checks.py
           if ($LASTEXITCODE -ne 0) { throw 'Service checks failed' }
+          build/w64devkit/bin/gcc.exe -std=c99 -O2 -DNO_LIBRAW tests/fringe_checks.c -o build/fringe-checks.exe -lm
+          if ($LASTEXITCODE -ne 0) { throw 'Fringe test build failed' }
+          build/fringe-checks.exe
+          if ($LASTEXITCODE -ne 0) { throw 'Fringe numerical checks failed' }
+          python -B tests/fringe_service_checks.py
+          if ($LASTEXITCODE -ne 0) { throw 'Fringe service/export checks failed' }
           node --test web/tests/viewer.test.cjs
           if ($LASTEXITCODE -ne 0) { throw 'Viewer tests failed' }
           node --check web/viewer.js

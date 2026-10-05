@@ -454,11 +454,22 @@ class Manager:
             frame['regions'] = []
             for j,row in enumerate(rows[i*5:i*5+5]):
                 def val(key):
-                    return float(row[key]) if row[key] else None
+                    return float(row[key]) if row.get(key) else None
                 crop = run/f'frame-{i+1:04}-roi-{j+1:02}.png'
                 frame['regions'].append(dict(id=row['roi'],**{k:int(row[k]) for k in ('x','y','width','height','dx','dy')},
                     sharpness=val('gradient_sharpness'),contrast=val('rms_contrast'),uncertainty=None,status=row['status'],
                     crop_url=f"/jobs/{job['id']}/{run.name}/{crop.name}" if crop.exists() else None))
+                if row.get('fringe_status'):
+                    mask = run/f'frame-{i+1:04}-roi-{j+1:02}-fringe.png'
+                    accepted = row['fringe_status'] == 'accepted' and mask.exists() and crop.exists()
+                    frame['regions'][-1]['fringe'] = dict(
+                        algorithm='rgb-edge-residual-v1',
+                        status=row['fringe_status'] if row['fringe_status'] != 'accepted' or accepted else 'overlay-missing',
+                        score=val('fringe_score') if accepted else None,
+                        pixels=int(row.get('fringe_pixels') or 0),
+                        baseline_pixels=int(row.get('fringe_baseline_pixels') or 0),
+                        noise=val('fringe_noise'), cast=val('fringe_cast'), luma_span=val('fringe_luma_span'),
+                        overlay_url=f"/jobs/{job['id']}/{run.name}/{mask.name}" if accepted else None)
             frame['status'] = 'ok' if all(r['status'] in GOOD for r in frame['regions']) else 'review-required'
             frame['flags'] = [f for f in frame['flags'] if f != 'clipping-warning']
             if any(r['status'] == 'clipping-warning' for r in frame['regions']):
@@ -480,7 +491,7 @@ class Manager:
         if not any(f['regions'] for f in m['frames']):
             raise ValueError('Analyze before exporting')
         with self.lock:
-            total = sum(1 for f in m['frames'] for r in f['regions'] if r.get('crop_url')) + 3
+            total = sum(bool(r.get('crop_url')) + bool(r.get('fringe', {}).get('overlay_url')) for f in m['frames'] for r in f['regions']) + 3
             if full_resolution:
                 total += sum(1 for f in m['frames'] if f.get('selected'))
             self.progress(job, completed=0, total=max(1,total), message='Collecting aligned crops for the offline report...')
@@ -508,6 +519,8 @@ class Manager:
         for frame in m['frames']:
             for region in frame['regions']:
                 region['crop_url'] = asset(region['crop_url'])
+                if region.get('fringe'):
+                    region['fringe']['overlay_url'] = asset(region['fringe'].get('overlay_url'))
         if full_resolution:
             for i,frame in enumerate(m['frames']):
                 check_cancel()
@@ -622,7 +635,7 @@ class Handler(BaseHTTPRequestHandler):
                 base = manager.jobs[parts[2]]['dir']
                 file = (base/Path(*parts[3:])).resolve()
                 relative = file.relative_to(base).as_posix()
-                allowed = (relative == 'preview.png' or re.fullmatch(r'run-\d+/(?:reference|frame-\d{4}-roi-\d{2})\.png',relative)
+                allowed = (relative == 'preview.png' or re.fullmatch(r'run-\d+/(?:reference|frame-\d{4}-roi-\d{2}(?:-fringe)?)\.png',relative)
                            or re.fullmatch(r'share-[a-f0-9]{8}\.zip',relative))
                 if not allowed:
                     raise ValueError('Asset is not public')

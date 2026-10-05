@@ -94,3 +94,11 @@ No browser-timed follow-up request is needed; refreshing the page does not
 interrupt the job. Cancel stops the active stage. Unaccepted detection stops
 with manual-correction instructions, even when older ROIs already exist.
 The manual Open folder / Detect / Run workflow remains available.
+
+## Relative edge color fringe
+
+The same live/offline viewer displays the optional native `region.fringe` fields
+in a separate panel for the current capture. Select a region to inspect its
+original crop, green score pixels and blue cast/noise baseline pixels; toggle the
+mask, scroll at 1:1 or Fit crop, and download the RGBA mask. Missing older/demo
+measurements remain unscored. See [metric definitions](../docs/color-fringe.md).

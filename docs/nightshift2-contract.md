@@ -28,3 +28,15 @@ preview/detection followed by analysis on an existing loaded series. One worker
 holds the decode lock across both stages. Analysis requires accepted detection
 and exactly five validated ROIs; uncertain detection fails with instructions
 for manual correction, and cancellation never advances to analysis.
+
+## Optional relative edge-color measurement
+
+New engines append a region `fringe` object without changing schema_version 1:
+`{algorithm:"rgb-edge-residual-v1", status, score:null|number, pixels, baseline_pixels,
+noise, cast, luma_span, overlay_url:null|string}`. Score is percent of ROI luminance
+span; cast is percent of full RGB scale, noise and span are normalized RGB8 units.
+Only accepted scores are displayable. `overlay_url` is an RGBA PNG aligned exactly
+to `crop_url` and served/exported with the same generated-asset rules. Green marks
+score pixels and blue marks baseline-fit pixels. Missing objects mean not measured
+(legacy engine/report/demo), never zero. Fringe rejection does not alter sharpness
+validity or whole-capture selection. Definitions/gates: [color-fringe.md](color-fringe.md).

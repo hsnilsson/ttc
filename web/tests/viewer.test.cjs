@@ -103,3 +103,13 @@ test('matrix range spans all regions and apertures using only valid selected sco
  assert.deepEqual(sharpnessRange(m),{min:100,max:100});
  assert.deepEqual(sharpnessRange({captures:[]}),{min:null,max:null});
 });
+
+
+test('fringe scores remain optional, versioned and independent of sharpness validity',()=>{
+  const {fringeValue,normalize}=require('../viewer.js');
+  for(const fringe of [undefined,{status:'accepted',score:0},{algorithm:'rgb-edge-residual-v1',status:'clipped',score:2},{algorithm:'rgb-edge-residual-v1',status:'accepted',score:null}])assert.equal(fringeValue({fringe}),null);
+  const fringe={algorithm:'rgb-edge-residual-v1',status:'accepted',score:0,overlay_url:'assets/mask.png'};
+  const data=normalize({frames:[{id:'a',regions:[{id:'center',sharpness:.3,status:'fixed',width:128,height:128,crop_url:'assets/crop.png',fringe}]}],groups:[]});
+  assert.equal(fringeValue(data.captures[0].measurements.center),0);
+  assert.deepEqual(data.captures[0].measurements.center.fringe,fringe);
+});

@@ -18,6 +18,16 @@ for(const frame of manifest.frames)for(const region of frame.regions){
  assert.equal(data.subarray(1,4).toString(),'PNG');
  assert.equal(data.readUInt32BE(16),region.width,'Native crop width');
  assert.equal(data.readUInt32BE(20),region.height,'Native crop height');
+ if(region.fringe?.overlay_url){
+  assert.equal(region.fringe.status,'accepted');
+  assert.ok(region.fringe.overlay_url.startsWith('assets/'));
+  const maskPath=path.resolve(dir,region.fringe.overlay_url);assert.ok(maskPath.startsWith(dir+path.sep));
+  const mask=fs.readFileSync(maskPath);
+  assert.equal(mask.subarray(1,4).toString(),'PNG');
+  assert.equal(mask.readUInt32BE(16),region.width,'Native mask width');
+  assert.equal(mask.readUInt32BE(20),region.height,'Native mask height');
+  assert.equal(mask[25],6,'RGBA mask');
+ }
  crops++;
 }
 console.log(JSON.stringify({frames:manifest.frames.length,apertures:manifest.groups.length,crops,portable:true}));

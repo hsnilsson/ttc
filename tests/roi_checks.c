@@ -36,7 +36,7 @@ static void check_csv(const char *dir,int rows) {
     FILE *f=fopen(path,"r");assert(f);int count=0;
     while(fgets(line,sizeof line,f)) {
         int commas=0;for(char *p=line;*p;++p) if(*p==',')++commas;
-        assert(commas==16);++count;
+        assert(commas==23);++count;
     }
     assert(count==rows+1);fclose(f);
 }

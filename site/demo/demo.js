@@ -54,7 +54,7 @@
     }
     async function buildReport(ticket) {
       try{
-        const exported=clone(result),urls=new Set([exported.preview?.url,...exported.captures.flatMap(c=>Object.values(c.measurements).map(m=>m.crop?.url))].filter(Boolean));
+        const exported=clone(result),urls=new Set([exported.preview?.url,...exported.captures.flatMap(c=>Object.values(c.measurements).flatMap(m=>[m.crop?.url,m.fringe?.overlay_url]))].filter(Boolean));
         const files=[],encoder=new TextEncoder();
         // Process sequentially to keep report memory and network requests bounded.
         for(const url of [...urls,'viewer.css','viewer.js']){

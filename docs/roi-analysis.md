@@ -84,8 +84,10 @@ The normalized contrast and gradient metrics are invariant to multiplication
 of decoded values **before clipping/quantization**. They are not invariant to
 black offsets, changing tone curves, white balance, vignetting, or arbitrary
 exposure changes in nonlinear rendered data. Use identical processing and
-similar exposure. For DNG, use TTC's corrected LibRaw rendering with fixed
-daylight white balance, fixed brightness, and no automatic exposure scaling.
+similar exposure. For DNG, TTC uses LibRaw with camera/as-shot white balance, fixed brightness,
+and no automatic exposure scaling. As-shot white-balance metadata can vary
+between captures; the renderer does not force identical white balance across
+a stack.
 
 Higher gradient energy can mean sharper detail, but also noise, ringing,
 sharpening, demosaicing artifacts, JPEG artifacts, or pixel-shift reconstruction
@@ -143,3 +145,10 @@ noise sensitivity, clipping, ROI bounds, malformed/overflowing/duplicate
 configurations, failed reference, dimension mismatch, invalid tracking radius,
 CSV column counts, and refusal to overwrite an existing report. The generated
 `build/roi-fixture.png` and `build/roi-fixture.conf` support CLI smoke tests.
+
+## Edge color fringe
+
+See [Relative edge color fringe](color-fringe.md) for the optional independent
+RGB8 metric, cast/noise baseline, rejection gates and contributing-pixel overlay.
+It uses the same original tracked ROI pixels as the detail statistics. It is not
+calibrated chromatic aberration or lens-only performance.

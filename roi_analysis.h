@@ -64,6 +64,8 @@ static RoiMetrics roi_measure(const Image *im, const Roi *r, int dx, int dy) {
     return m;
 }
 
+#include "roi_fringe.h"
+
 /* Tracking uses context around the ROI, with a fixed, deterministic sample
  * grid and 3x3 averaging. Metrics always use unresampled original pixels. */
 static double roi_smooth(const Image *im, int x, int y) {
@@ -265,11 +267,11 @@ static int roi_cli(int argc,char **argv) {
     int config_error=ferror(saved);
     if(fclose(saved)) config_error=1;
     if(config_error) { fclose(csv); fclose(html); free(rs); return 1; }
-    fputs("image,roi,status,x,y,width,height,dx,dy,correlation,peak_margin,mean_luma,rms_contrast,percentile_contrast,gradient_sharpness,sharpness_vs_reference,clipped_fraction\n",csv);
+    fputs("image,roi,status,x,y,width,height,dx,dy,correlation,peak_margin,mean_luma,rms_contrast,percentile_contrast,gradient_sharpness,sharpness_vs_reference,clipped_fraction,fringe_status,fringe_score,fringe_pixels,fringe_baseline_pixels,fringe_noise,fringe_cast,fringe_luma_span\n",csv);
     fputs("<!doctype html><meta charset=utf-8><title>TTC ROI comparison</title><style>body{font:16px system-ui;margin:2em;background:#f5f5f5;color:#20242a}table{border-collapse:collapse;background:white}td,th{border:1px solid #ccc;padding:.6em;text-align:left}img{max-width:320px;max-height:240px}code{white-space:pre-wrap}.overview{max-width:100%;max-height:none}small{display:block}th{position:sticky;top:0;background:#e4e9ed}</style><h1>TTC ROI comparison</h1><p>Relative detail and contrast on decoded RGB8 values. Compare the <b>same ROI</b> across frames. Higher gradient energy can also mean noise or sharpening. These are not MTF or calibrated lp/mm measurements.</p><p>First image is the reference. Coordinates are original decoded pixels; image size must match exactly. Tracking is integer translation only. Rejected tracking rows have no measurements. Inspect crops and clipping before ranking. ROI crops retain full decoded pixel detail; the overview alone uses nearest-neighbor downsampling.</p>",html);
     fprintf(html,"<p>TTC %s / ROI metrics v1. <a href=\"report.csv\">Download CSV</a> &middot; <a href=\"rois.conf\">Reusable ROI configuration</a></p><p>Expected size: %d &times; %d. Tracking radius: %d pixels.</p><pre>",VERSION,width,height,radius);
     for(int j=0;j<n;++j) fprintf(html,"%s: x=%d y=%d w=%d h=%d\n",rs[j].name,rs[j].x,rs[j].y,rs[j].w,rs[j].h);
-    fputs("</pre><table><tr><th>Frame / ROI</th><th>Crop</th><th>Status / shift</th><th>Sharpness proxy</th><th>vs reference</th><th>RMS contrast</th><th>Mean / clipping</th></tr>",html);
+    fputs("</pre><table><tr><th>Frame / ROI</th><th>Crop</th><th>Status / shift</th><th>Sharpness proxy</th><th>vs reference</th><th>RMS contrast</th><th>Mean / clipping</th><th>Relative edge color fringe</th></tr>",html);
     RoiMetrics baseline[ROI_MAX]={{0}};
     int errors=0,reference_ok=0;
     SelectiveWindow windows[ROI_MAX];
@@ -298,12 +300,16 @@ static int roi_cli(int argc,char **argv) {
             if(problem) match.status=problem;
             else if(i==first) { match.status="reference"; if(radius)roi_reference(r,im,radius); }
             else if(radius) { match=roi_track(im,r,radius); valid=!strcmp(match.status,"tracked"); }
+            int fringe_eligible=valid;
             if(valid) {
                 m=roi_measure(im,r,match.dx,match.dy);
                 if(m.mean<0.01) { match.status="too-dark"; valid=0; }
                 else if(m.contrast<0.001) { match.status="flat"; valid=0; }
                 else if(m.clipped>0.01) match.status="clipping-warning";
             }
+            RoiFringe fringe={match.status,0,0,0,0,0,0};
+            unsigned char *fringe_mask=NULL;
+            if(fringe_eligible) fringe=roi_fringe(im,r,match.dx,match.dy,&fringe_mask);
             if(i==first && valid) baseline[j]=m;
             if(!valid) ++errors;
             roi_csv(csv,argv[i]); fputc(',',csv); roi_csv(csv,r->name);
@@ -315,8 +321,11 @@ static int roi_cli(int argc,char **argv) {
             if(valid) {
                 fprintf(csv,"%.8f,%.8f,%.8f,%.8f,",m.mean,m.contrast,m.pcontrast,m.sharpness);
                 if(baseline[j].sharpness>0)fprintf(csv,"%.8f",relative);
-                fprintf(csv,",%.8f\n",m.clipped);
-            } else fputs(",,,,,\n",csv);
+                fprintf(csv,",%.8f",m.clipped);
+            } else fputs(",,,,,",csv);
+            fprintf(csv,",%s,",fringe.status);
+            if(fringe_mask) fprintf(csv,"%.8f",fringe.score);
+            fprintf(csv,",%zu,%zu,%.8f,%.8f,%.8f\n",fringe.pixels,fringe.baseline,fringe.noise,fringe.cast,fringe.span);
             fputs("<tr><td>",html); roi_html(html,argv[i]); fprintf(html,"<small>%s</small></td><td>",r->name);
             if(valid) {
                 char name[64]; snprintf(name,sizeof name,"frame-%04d-roi-%02d.png",i-first+1,j+1);
@@ -332,12 +341,19 @@ static int roi_cli(int argc,char **argv) {
             if(valid) {
                 fprintf(html,"<td>%.5f</td><td>",m.sharpness);
                 if(baseline[j].sharpness>0)fprintf(html,"%.1f%%",100*relative); else fputs("unavailable",html);
-                fprintf(html,"</td><td>%.4f</td><td>%.4f / %.2f%%</td></tr>",m.contrast,m.mean,100*m.clipped);
-            } else fputs("<td colspan=4>Measurement rejected</td></tr>",html);
+                fprintf(html,"</td><td>%.4f</td><td>%.4f / %.2f%%</td>",m.contrast,m.mean,100*m.clipped);
+            } else fputs("<td colspan=4>Measurement rejected</td>",html);
+            if(fringe_mask) {
+                char name[80]; snprintf(name,sizeof name,"frame-%04d-roi-%02d-fringe.png",i-first+1,j+1);
+                snprintf(path,sizeof path,"%s/%s",argv[3],name);
+                if(!stbi_write_png(path,r->w,r->h,4,fringe_mask,r->w*4)) ++errors;
+                fprintf(html,"<td>%.3f%%<small>%zu edge pixels; %zu baseline pixels. Cast %.2f%%.</small><details><summary>Contributing pixels</summary><div style=\"position:relative;display:inline-block\"><img src=\"frame-%04d-roi-%02d.png\"><img style=\"position:absolute;left:0;top:0\" src=\"%s\"></div></details></td></tr>",fringe.score,fringe.pixels,fringe.baseline,fringe.cast,i-first+1,j+1,name);
+            } else fprintf(html,"<td>Unavailable: %s</td></tr>",fringe.status);
+            free(fringe_mask);
         }
         free_image(im);
     }
-    fputs("</table><h2>Reference overview</h2>",html);
+    fputs("</table><p>Edge color fringe v1: excess RMS RGB residual after fitting a global cast on non-edge pixels, divided by the ROI luminance span. Green overlay pixels contribute to the score; blue pixels fit cast and noise. Lower means less residual color in this same target region with identical rendering. White balance, tone curves, demosaicing, target ink and noise affect results. Not calibrated chromatic aberration, lens-only performance or lp/mm. See docs/color-fringe.md for thresholds.</p><h2>Reference overview</h2>",html);
     if(reference_ok) {
         fprintf(html,"<svg role=img aria-label=\"Reference with ROI locations\" style=\"width:100%%;max-width:1600px\" viewBox=\"0 0 %d %d\"><image href=\"reference.png\" width=\"%d\" height=\"%d\"/>",width,height,width,height);
         int font=width/70; if(font<12)font=12;
