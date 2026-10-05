@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path');
 const vm=require('node:vm');
 const {createDemo,FOLDER,WARNING}=require('../../site/demo/demo.js');
-const {zipStore}=require('../viewer.js');
+const {zipStore,apertureRecommendations}=require('../viewer.js');
 const sample=()=>JSON.parse(fs.readFileSync(path.join(__dirname,'../../site/demo/sample.json'),'utf8'));
 function harness(options={}){
   const queue=new Map();let serial=0;
@@ -50,6 +50,8 @@ test('aperture edits regroup captures and whole-capture overrides affect all reg
   const h=harness();await open(h.demo,true);const done=await h.finish();const first=done.result.captures[0],second=done.result.captures[1];
   const selected=await h.demo.request('jobs/demo/edit',{selected:{[first.aperture]:second.id}});
   assert.equal(selected.result.apertures[0].selectedCaptureId,second.id);
+  assert.ok(apertureRecommendations(selected.result).balanced.rows[0].flags.includes('manual-selection'));
+  assert.equal(apertureRecommendations(selected.result).balanced.rows[0].captureId,second.id);
   assert.deepEqual(selected.result.captures[1].measurements,second.measurements);
   const newAperture=Math.max(...done.result.apertures.map(g=>g.value))+1;
   const edited=await h.demo.request('jobs/demo/edit',{apertures:{[first.id]:newAperture,[second.id]:null}});

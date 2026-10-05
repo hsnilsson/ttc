@@ -91,3 +91,9 @@ build/w64devkit/bin/gcc.exe -std=c99 -O2 -fno-strict-aliasing -I. '-DTTC_SOURCE=
 Correctness checks compare decoded pixels, never compressed PNG bytes. See
 [BENCHMARKS.md](../BENCHMARKS.md) for the measured source commit and results.
 The harness is Windows-specific; no Linux test run is claimed.
+
+Aperture recommendations: `node --test web/tests/recommendations.test.cjs` checks
+independent pattern scaling, explicit center/corner weights, incomplete and invalid
+data, zero references, exact/near ties, whole-repeat ranges, overlap, clipping,
+manual selections and legacy manifest compatibility. Run viewer and demo suites
+alongside it. Recommendations are computed in the viewer, including exported reports.

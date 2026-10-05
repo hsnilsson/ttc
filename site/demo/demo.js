@@ -10,11 +10,14 @@
     let result={captures:[],apertures:[],rois:[],warnings:[WARNING]},status='ready',progress=null,timer=null,generation=0,writeZip=null,exportUrl=null;
     const snapshot=()=>clone({id:'demo',status,progress,result});
     function regroup(overrides={}) {
-      const prior=new Map((result.apertures||[]).map(g=>[g.value,g.selectedCaptureId]));
+      const previous=result.apertures||[];
+      const prior=new Map(previous.map(g=>[g.value,g.selectedCaptureId]));
       result.apertures=[...new Set(result.captures.map(c=>c.aperture).filter(a=>a>0))].sort((a,b)=>a-b).map(value=>{
         const candidates=result.captures.filter(c=>c.aperture===value);
         const preferred=overrides[value]||prior.get(value);
-        return {value,selectedCaptureId:candidates.some(c=>c.id===preferred)?preferred:candidates[0].id,flags:[]};
+        const selectedCaptureId=candidates.some(c=>c.id===preferred)?preferred:candidates[0].id;
+        const manual=Object.hasOwn(overrides,value)||previous.some(g=>g.value===value&&g.selectedCaptureId===selectedCaptureId&&g.flags?.includes('manual-selection'));
+        return {value,selectedCaptureId,flags:manual?['manual-selection']:[]};
       });
     }
     function invalidate() {

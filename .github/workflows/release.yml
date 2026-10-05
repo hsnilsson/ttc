@@ -46,7 +46,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'LibRaw patch regression checks failed' }
           python -B tests/local_checks.py
           if ($LASTEXITCODE -ne 0) { throw 'Service checks failed' }
-          node --test web/tests/viewer.test.cjs
+          node --test web/tests
           if ($LASTEXITCODE -ne 0) { throw 'Viewer tests failed' }
           node --check web/viewer.js
           if ($LASTEXITCODE -ne 0) { throw 'Viewer syntax failed' }

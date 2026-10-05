@@ -68,7 +68,7 @@ Write-Host 'Running Python service checks...'
 & $python[0] @pythonPrefix -B tests\local_checks.py
 
 Write-Host 'Running viewer tests...'
-node --test web\tests\viewer.test.cjs
+node --test web\tests
 if ($LASTEXITCODE -ne 0) {
     throw "Node viewer tests failed with exit code $LASTEXITCODE."
 }

@@ -129,8 +129,14 @@ def regroup(manifest, overrides):
     apertures = sorted({f['aperture'] for f in manifest['frames'] if f['aperture'] is not None})
     for aperture in apertures:
         frames = [f for f in manifest['frames'] if f['aperture'] == aperture]
-        usable = [f for f in frames if len(f['regions']) == 5 and all(
-            r['status'] in GOOD and r['sharpness'] is not None for r in f['regions'])]
+        # Whole-capture selection requires one finite, nonnegative score per ROI.
+        # Aperture recommendations are derived by the shared live/offline viewer.
+        usable = [f for f in frames if len(f['regions']) == 5
+                  and {r['id'] for r in f['regions']} == set(REGIONS) and all(
+                      r['status'] in GOOD and isinstance(r['sharpness'], (int, float))
+                      and not isinstance(r['sharpness'], bool)
+                      and math.isfinite(r['sharpness']) and r['sharpness'] >= 0
+                      for r in f['regions'])]
         flags = []
         for i, frame in enumerate(frames):
             frame['repeat'] = i+1

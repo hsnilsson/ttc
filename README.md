@@ -30,7 +30,11 @@ for every capture.
 ![Sharpness map across aperture and image position](docs/screenshots/sharpness-map.png)
 
 The report summarizes each aperture as a column and each measured target region
-as a row, with a total row to make the best complete capture easier to spot.
+as a row, with explicit **best center**, **best corners**, and **best balanced**
+recommendations. Each region is compared with itself across apertures before
+aggregation; different target patterns are never summed as raw scores. Close
+choices, missing data, clipping and repeat caveats remain visible. See the
+[recommendation method](docs/aperture-recommendations.md).
 
 Create a lossless PNG composite containing a center crop and four corner crops
 for comparing lens sharpness and film/sensor flatness. Source pixels are copied

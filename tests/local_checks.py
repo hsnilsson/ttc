@@ -75,6 +75,25 @@ class Checks(unittest.TestCase):
         self.assertEqual(m['groups'][0]['selected_frame_id'],'b')
         self.assertIsNone(m['frames'][1]['regions'][0]['uncertainty'])
 
+    def test_selection_rejects_invalid_scores_and_duplicate_regions(self):
+        def frame(fid):
+            return dict(id=fid,aperture=4.,flags=[],regions=[
+                dict(id=r,sharpness=1.,status='tracked') for r in ttc.REGIONS])
+        for value in (None, float('nan'), float('inf'), -1, True, '1'):
+            bad,good=frame('bad'),frame('good')
+            bad['regions'][0]['sharpness']=value
+            m=dict(frames=[bad,good]);ttc.regroup(m,{})
+            self.assertEqual(m['groups'][0]['selected_frame_id'],'good')
+            self.assertIsNone(good['regions'][0]['uncertainty'])
+        bad,good=frame('bad'),frame('good')
+        bad['regions'][0]['id']='tl'
+        m=dict(frames=[bad,good]);ttc.regroup(m,{})
+        self.assertEqual(m['groups'][0]['selected_frame_id'],'good')
+        # Manual selection remains explicit even if the chosen capture is rejected.
+        ttc.regroup(m,{'4.0':'bad'})
+        self.assertEqual(m['groups'][0]['selected_frame_id'],'bad')
+        self.assertIn('manual-selection',m['groups'][0]['flags'])
+
     def test_http_guards(self):
         with tempfile.TemporaryDirectory() as tmp:
             manager=ttc.Manager('unused',tmp)

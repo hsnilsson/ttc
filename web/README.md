@@ -24,8 +24,7 @@ Offline whole-capture overrides affect only the current viewing session.
 Colors use one accepted minimum-to-maximum across all five regions and all
 apertures, over a purple, teal, and yellow spectrum. Equal scores share the
 same color throughout the matrix; a constant range uses the middle color.
-Only selected captures contribute; rejected values are excluded. The total
-row uses a separate range for its sums. Colors indicate
+Only selected captures contribute; rejected values are excluded. Recommendation rows use normalized points on a fixed 0–100 scale. Colors indicate
 relative position, not statistical significance. Clicking a column header or
 any of its five values selects that aperture for all detail panes. The matrix
 has no cell gaps or borders; focus-region selection is a separate control. A missing selected frame remains unranked, and unknown apertures
@@ -58,7 +57,7 @@ fake computer and jobs. Local and offline entry points do not install it.
 Run `node --test web/tests/demo.test.cjs` for simulated workflow/export checks.
 See `docs/pages-publication.md` for asset provenance and Pages staging.
 
-Run `node --test web/tests/viewer.test.cjs` and `node --check web/viewer.js`.
+Run `node --test web/tests/viewer.test.cjs web/tests/recommendations.test.cjs` and `node --check web/viewer.js`.
 For explicit synthetic browser QA only, run `node web/tests/serve-fixture.cjs`
 and open `http://127.0.0.1:8766`. The fixture is never loaded by production.
 
@@ -82,10 +81,19 @@ zoom ranges from 100% to 800%, with scrollbars and Fit target; zoom does not
 change source coordinates. Each drag is one undo action, including when zoomed.
 
 The heatmap orders regions Top left, Top right, Center, Bottom left, Bottom right.
-A total row follows after 5 CSS pixels: raw sum of all five valid region scores
-from the selected whole capture. Missing/rejected regions leave the total unranked.
-Highest totals (including ties) are starred. This is a practical summary of the
-existing metric, not a calibrated global optical measurement.
+Three recommendation rows follow after 5 CSS pixels: best center, best corners,
+and best balanced. Each pattern is divided by its own best valid selected score
+across assigned apertures; corners average four ratios and balance weights center
+and corners equally. Missing/rejected data or zero references leave the affected
+summary unranked. Ties and choices within two normalized points are shown together.
+At least two comparable apertures are required. Cards expose clipping, manual
+selection, repeat disagreement, unavailable repeats and overlapping observed repeat
+ranges. These are practical guides, not calibrated quality or statistical confidence.
+See [the full method](../docs/aperture-recommendations.md).
+`apertureRecommendations` derives results from either manifest representation;
+the deprecated `sharpnessTotals` helper returns normalized balanced rows now.
+No new server fields, assets, requests, or offline dependencies are required.
+Previewing a repeat does not change the table; **Use this whole capture** does.
 
 **Open & compare automatically** imports a folder and starts the server-side
 `automatic` job: generate preview, detect all five ROIs, then analyze the series.
