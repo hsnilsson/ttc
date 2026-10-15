@@ -1,5 +1,9 @@
 # MTF Mapper feasibility for TTC
 
+**Update 2026-10-15:** a measured, opt-in Siemens-spoke single-edge prototype
+now exists. See [method, validation and limitations](siemens-edge-mtf.md).
+The assessment below is retained as the earlier pre-measurement background.
+
 Research checked 2026-09-21. This is an integration assessment, not a measurement
 of the local DNGs. No MTF Mapper binary was installed or run during this research.
 

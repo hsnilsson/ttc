@@ -20,6 +20,18 @@ ttc = importlib.util.module_from_spec(spec); spec.loader.exec_module(ttc)
 
 
 class Checks(unittest.TestCase):
+    def test_optional_star_stage_rejects_undefined_transfer_and_registration(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            manager=ttc.Manager(Path(tmp)/'engine.exe',Path(tmp)/'jobs',Path(tmp)/'mapper.exe')
+            job={'paths':['capture.png'],'result':{'frames':[{'star_mtf':['stale']} ]}}
+            manager.measure_stars(job)
+            self.assertEqual(job['result']['star_mtf']['status'],'unavailable')
+            self.assertIn('transfer curve',job['result']['star_mtf']['reason'])
+            self.assertNotIn('star_mtf',job['result']['frames'][0])
+            job['paths']=['capture.dng']
+            manager.measure_stars(job)
+            self.assertIn('automatic chart detection',job['result']['star_mtf']['reason'])
+
     def test_folder_browser(self):
         with tempfile.TemporaryDirectory(prefix='TTC browse ') as tmp:
             root=Path(tmp)
@@ -101,6 +113,12 @@ class Checks(unittest.TestCase):
                 self.assertEqual(request('/api/jobs',b'x'*65537,**h),400)
                 self.assertEqual(request('/../../local/ttc_local.py'),400)
                 self.assertEqual(request('/jobs/1234567890abcdef/native.log'),404)
+                fixture=Path(tmp)/'public-fixture'; (fixture/'mtf-1').mkdir(parents=True)
+                (fixture/'mtf-1'/'frame-0001-roi-01-preview.png').write_bytes(b'preview')
+                (fixture/'mtf-1'/'measurements.json').write_text('{}')
+                manager.jobs['abcdef0123456789']={'dir':fixture.resolve()}
+                self.assertEqual(request('/jobs/abcdef0123456789/mtf-1/frame-0001-roi-01-preview.png'),200)
+                self.assertEqual(request('/jobs/abcdef0123456789/mtf-1/measurements.json'),400)
                 self.assertEqual(request('/api/jobs',b'{"auto_run":"yes"}',**h),400)
                 with mock.patch.object(manager,'create',return_value={'id':'1234567890abcdef'}) as create, mock.patch.object(manager,'launch',return_value={'status':'running'}) as launch:
                     self.assertEqual(request('/api/jobs',b'{"input_dir":"example","auto_run":true}',**h),201)

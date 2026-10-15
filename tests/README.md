@@ -1,5 +1,12 @@
 # Decoder verification
 
+Experimental star-edge validation: `python -B tests/star_mtf_checks.py` needs
+the normal Vlad NumPy/OpenCV dependencies and Python 3.11+. Set
+`TTC_MTF_MAPPER` to a 0.7.40 executable to run the analytic Gaussian MTF tests;
+otherwise those external-engine checks are explicitly skipped. Run
+`node --test web/tests/star-mtf.test.cjs` for comparison semantics. See
+`docs/siemens-edge-mtf.md` for real-capture results and scope limitations.
+
 `python -B tests/build_patch_checks.py build/LibRaw-0.21.2.tar.gz` verifies the
 actual build patch with all four Windows/Unix script/source line-ending
 combinations, repeated application, and rejection of an unexpected source.

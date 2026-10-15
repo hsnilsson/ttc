@@ -1,3 +1,5 @@
+param([string]$MtfMapper)
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
@@ -67,4 +69,8 @@ if ($python.Length -gt 1) {
 Write-Host 'Starting TTC local service. Use the URL printed by the service below.'
 Write-Host 'Keep this terminal running while using the browser UI.'
 
-& $python[0] @pythonPrefix local\ttc_local.py serve --engine build\ttc-cli.exe
+$experimentalArgs = @()
+if ($MtfMapper) {
+    $experimentalArgs = @('--mtf-mapper', (Resolve-Path -LiteralPath $MtfMapper).Path)
+}
+& $python[0] @pythonPrefix local\ttc_local.py serve --engine build\ttc-cli.exe @experimentalArgs

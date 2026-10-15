@@ -174,8 +174,9 @@ def regroup(manifest, overrides):
 
 
 class Manager:
-    def __init__(self, engine, workspace):
+    def __init__(self, engine, workspace, mtf_mapper=None):
         self.engine = Path(engine).resolve()
+        self.mtf_mapper = Path(mtf_mapper).resolve() if mtf_mapper else None
         self.workspace = Path(workspace).resolve()
         self.workspace.mkdir(parents=True, exist_ok=True)
         self.jobs = {}
@@ -298,6 +299,10 @@ class Manager:
             job.update(status='running',error=None,cancel=False)
             if action in ('analyze', 'detect', 'automatic', 'export'):
                 job['result'].pop('export_url', None)
+            if action in ('analyze', 'automatic'):
+                job['result'].pop('star_mtf', None)
+                for frame in job['result']['frames']:
+                    frame.pop('star_mtf', None)
             if action == 'analyze':
                 for frame in job['result']['frames']:
                     frame['regions'] = []; frame['status'] = 'ready'
@@ -312,11 +317,11 @@ class Manager:
         threading.Thread(target=self.worker,args=(job,action,data or {}),daemon=True).start()
         return self.snapshot(jid)
 
-    def run_native(self, job, args):
+    def run_native(self, job, args, executable=None):
         with self.lock:
             if job['cancel']:
                 raise InterruptedError('Cancelled')
-            proc = subprocess.Popen([str(self.engine), *map(str,args)],stdout=subprocess.PIPE,stderr=subprocess.STDOUT,
+            proc = subprocess.Popen([str(executable or self.engine), *map(str,args)],stdout=subprocess.PIPE,stderr=subprocess.STDOUT,
                                     text=True,errors='replace',creationflags=CREATE_FLAGS)
             job['process'] = proc
         lines = []
@@ -470,6 +475,60 @@ class Manager:
             m['warnings'] = ['Some measurements were rejected; inspect capture status.'] if code else []
             regroup(m, job['overrides'])
 
+        if self.mtf_mapper:
+            self.measure_stars(job)
+
+    def measure_stars(self, job):
+        """Optional experimental stage; never replace the established metric."""
+        m = job['result']
+        with self.lock:
+            for frame in m['frames']:
+                frame.pop('star_mtf', None)
+            m['star_mtf'] = dict(status='unavailable',provenance='Experimental Siemens-spoke slanted-edge measurements.')
+        if any(Path(p).suffix.lower() != '.dng' for p in job['paths']):
+            with self.lock:
+                m['star_mtf']['reason'] = 'Only TTC-rendered DNG input has a defined transfer curve for this experiment.'
+            return
+        detection = m.get('detection', {})
+        if detection.get('status') != 'accepted' or not detection.get('reference_to_source'):
+            with self.lock:
+                m['star_mtf']['reason'] = 'Run automatic chart detection to locate the stars.'
+            return
+        try:
+            from star_mtf import geometry
+            locations = geometry(detection['reference_to_source'],m['width'],m['height'])
+            run = job['dir']/f"mtf-{job['revision']}"
+            config = job['dir']/'stars.conf'
+            config.write_text(f"image {m['width']} {m['height']}\n"+''.join(
+                f"{r['id']} {r['x']} {r['y']} {r['width']} {r['height']}\n" for r in locations),encoding='ascii')
+            positions = job['dir']/'stars-geometry.json'
+            positions.write_text(json.dumps(locations),encoding='utf-8')
+            with self.lock:
+                self.progress(job,completed=0,total=len(m['frames']),message='Extracting original-pixel Siemens-star regions...')
+            self.run_native(job,['--analyze',config,run,'--track',32,*job['paths']])
+            with self.lock:
+                self.progress(job,completed=0,total=0,message='Validating isolated star edges and crop stability...')
+            output = run/'measurements.json'
+            self.run_native(job,['-I','-B',ROOT/'local'/'star_mtf.py','--run',run,'--geometry',positions,
+                                 '--mapper',self.mtf_mapper,'--output',output],executable=sys.executable)
+            result = json.loads(output.read_text(encoding='utf-8'))
+            if len(result['frames']) != len(m['frames']):
+                raise ValueError('Incomplete star measurements')
+            with self.lock:
+                for frame,stars in zip(m['frames'],result.pop('frames')):
+                    for star in stars:
+                        name = star.pop('crop_name', None)
+                        star['crop_url'] = f"/jobs/{job['id']}/{run.name}/{name}" if name else None
+                    frame['star_mtf'] = stars
+                m['star_mtf'] = result
+        except InterruptedError:
+            raise
+        except (OSError, ValueError, RuntimeError, ImportError) as exc:
+            with (job['dir']/'native.log').open('a',encoding='utf-8') as log:
+                log.write('Star measurement unavailable: '+str(exc)+'\n')
+            with self.lock:
+                m['star_mtf']['reason'] = 'Star measurement unavailable. Check the configured MTF Mapper 0.7.40 executable and local native.log.'
+
     def export(self, job, full_resolution=False):
         def check_cancel():
             with self.lock:
@@ -508,6 +567,8 @@ class Manager:
         for frame in m['frames']:
             for region in frame['regions']:
                 region['crop_url'] = asset(region['crop_url'])
+            for star in frame.get('star_mtf', []):
+                star['crop_url'] = asset(star.get('crop_url'))
         if full_resolution:
             for i,frame in enumerate(m['frames']):
                 check_cancel()
@@ -622,7 +683,7 @@ class Handler(BaseHTTPRequestHandler):
                 base = manager.jobs[parts[2]]['dir']
                 file = (base/Path(*parts[3:])).resolve()
                 relative = file.relative_to(base).as_posix()
-                allowed = (relative == 'preview.png' or re.fullmatch(r'run-\d+/(?:reference|frame-\d{4}-roi-\d{2})\.png',relative)
+                allowed = (relative == 'preview.png' or re.fullmatch(r'(?:run|mtf)-\d+/(?:reference|frame-\d{4}-roi-\d{2}(?:-preview)?)\.png',relative)
                            or re.fullmatch(r'share-[a-f0-9]{8}\.zip',relative))
                 if not allowed:
                     raise ValueError('Asset is not public')
@@ -703,12 +764,14 @@ def main():
     parser.add_argument('command',choices=['serve','analyze'])
     parser.add_argument('--engine',type=Path,default=ROOT/'build'/'ttc-cli.exe')
     parser.add_argument('--workspace',type=Path,default=ROOT/'build'/'local-jobs')
+    parser.add_argument('--mtf-mapper',type=Path,default=os.environ.get('TTC_MTF_MAPPER'),
+                        help='Optional experimental MTF Mapper 0.7.40 executable (or TTC_MTF_MAPPER); adds star-edge validation')
     parser.add_argument('--input'); parser.add_argument('--roi'); parser.add_argument('--output',type=Path)
     parser.add_argument('--apertures',type=Path,help='JSON object mapping filenames to corrected f-numbers')
     parser.add_argument('--track',type=int,default=32); parser.add_argument('--port',type=int,default=0)
     parser.add_argument('--no-browser',action='store_true'); parser.add_argument('--full-resolution',action='store_true')
     args = parser.parse_args()
-    manager = Manager(args.engine,args.workspace)
+    manager = Manager(args.engine,args.workspace,args.mtf_mapper)
     if args.command == 'serve':
         server = make_server(manager,args.port)
         url = f'http://127.0.0.1:{server.server_port}/'

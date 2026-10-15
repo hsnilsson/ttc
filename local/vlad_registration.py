@@ -204,7 +204,11 @@ def detect(preview, width, height):
     if max(scales) / min(scales) > 3:
         return rejected('Perspective changes scale too strongly across the target.', **evidence)
     angle = math.degrees(math.atan2(corners[1, 1] - corners[0, 1], corners[1, 0] - corners[0, 0]))
+    # Geometry is evidence from feature registration, not a coordinate fallback.
+    # Consumers must still verify local content before measuring these areas.
+    reference_to_source = np.diag([width / iw, height / ih, 1.]) @ matrix
     return dict(status='accepted', confidence=min(r['confidence'] for r in regions), rois=regions,
+                reference_to_source=reference_to_source.tolist(),
                 candidates=regions, orientation_degrees=round(angle, 2), label_convention='upright-chart',
                 warnings=['Centers follow the user-calibrated reference; inspect all five squares. '
                           'Corner names refer to the upright chart, not the screen. '

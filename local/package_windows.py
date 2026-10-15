@@ -100,6 +100,7 @@ def build(runtime: Path, engine: Path, licenses: Path, output: Path, web: Path, 
     shutil.copy2(ROOT/'LICENSE', output/'licenses'/'TTC-LICENSE')
     (output/'local').mkdir()
     shutil.copy2(ROOT/'local'/'ttc_local.py', output/'local'/'ttc_local.py')
+    shutil.copy2(ROOT/'local'/'star_mtf.py', output/'local'/'star_mtf.py')
     if (ROOT/'local'/'vlad_registration.py').is_file():
         if not dependencies.is_dir():
             raise ValueError('Feature detector requires build/python-deps; install local/requirements-vlad.txt there first')
