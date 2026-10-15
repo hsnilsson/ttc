@@ -41,6 +41,59 @@
   function starMeasurement(capture,id,direction){
     return capture?.star_mtf?.find(s=>s.id===id)?.edges?.find(e=>e.direction===direction);
   }
+  const acceptedStar=e=>e?.status==='accepted'&&Number.isFinite(e.mtf50)&&e.mtf50>0&&e.mtf50<.5;
+  const STAR_COLORS=['#66c2ff','#ffb65c','#d99aff','#55dfbd','#ffe16a','#ff839e','#b3df72','#c7c9ff'];
+  const PRIMARY_STAR_IDS=['outer_tl','outer_tr','center_small','outer_bl','outer_br'];
+  function starCoverage(capture){
+    const locations=PRIMARY_STAR_IDS.map(id=>({id,complete:['horizontal detail','vertical detail'].every(direction=>acceptedStar(starMeasurement(capture,id,direction)))}));
+    return {locations,accepted:locations.filter(l=>l.complete).length,total:PRIMARY_STAR_IDS.length};
+  }
+  function starCurveSeries(data,id,direction){
+    return groups(data).flatMap((g,groupIndex)=>g.captures.map((capture,repeatIndex)=>{
+      const edge=starMeasurement(capture,id,direction);
+      if(!acceptedStar(edge)||!Array.isArray(edge.sfr)||!Array.isArray(edge.frequencies)||edge.sfr.length!==edge.frequencies.length)return null;
+      const points=edge.sfr.map((value,i)=>({x:edge.frequencies[i],y:value}));
+      if(points.length<2||points.some((p,i)=>!Number.isFinite(p.x)||!Number.isFinite(p.y)||p.x<0||p.x>.5||p.y<0||p.y>1.2||(i>0&&p.x<=points[i-1].x)))return null;
+      return {aperture:g.value,captureId:capture.id,name:capture.name||capture.id,repeatIndex,groupIndex,color:STAR_COLORS[groupIndex%STAR_COLORS.length],selected:capture.id===g.selectedCaptureId,mtf50:edge.mtf50,points};
+    }).filter(Boolean));
+  }
+  function starConfidence(captures,id,direction){
+    const edges=captures.map(c=>starMeasurement(c,id,direction)),accepted=edges.filter(acceptedStar),values=accepted.map(e=>e.mtf50);
+    const spread=values.length>1?(Math.max(...values)-Math.min(...values))/(values.reduce((a,b)=>a+b,0)/values.length):null;
+    const crop=accepted.map(e=>e.crop_spread).filter(Number.isFinite);
+    return {accepted:accepted.length,total:edges.length,repeatSpread:spread,cropSpread:crop.length?Math.max(...crop):null,
+      label:!accepted.length?'No accepted measurement':accepted.length<edges.length?'Incomplete repeats':accepted.length<2?'Single capture only':spread>.1?'Repeats disagree':'Repeats agree within 10%'};
+  }
+  function starSupport(edge){
+    const supporting=Array.isArray(edge?.supporting_edges)?edge.supporting_edges:[],accepted=supporting.filter(acceptedStar);
+    const differences=acceptedStar(edge)?accepted.map(e=>Math.abs(e.mtf50-edge.mtf50)/edge.mtf50):[];
+    const difference=differences.length?Math.max(...differences):null;
+    return {total:supporting.length,accepted:accepted.length,difference,caution:difference!==null&&difference>.2};
+  }
+  function starSupportHTML(edge){
+    const evidence=starSupport(edge);
+    if(!evidence.total)return '<p>Supporting spokes: unavailable. One accepted edge alone cannot establish agreement across edges.</p>';
+    return `<p class="${evidence.caution?'warning':''}">Supporting spokes: ${evidence.accepted}/${evidence.total} accepted. ${evidence.difference===null?'Difference from primary unavailable.':`Largest difference from primary: ${(100*evidence.difference).toFixed(1)}%.`}${evidence.caution?' Caution: exceeds 20%; inspect the edge locations.':''} ${acceptedStar(edge)?'The plotted curve and MTF50 still use the primary edge.':'Supporting spokes do not replace a rejected primary edge.'}</p>`;
+  }
+  function starTrackingHTML(tracking){
+    if(!tracking)return '<p>Chart-context tracking evidence unavailable.</p>';
+    const number=value=>Number.isFinite(value)?Number(value.toFixed(2)):'unavailable';
+    return `<p>Chart-context tracking: <strong>${escape(tracking.status||'unavailable')}</strong> · shift ${Array.isArray(tracking.shift)?tracking.shift.map(number).join(', '):'unavailable'} pixels · inliers ${number(tracking.inliers)} · context coverage ${Number.isFinite(tracking.coverage)?number(100*tracking.coverage)+'%':'unavailable'} · 90th-percentile residual ${number(tracking.residual_p90)} pixels${tracking.anchor===true?' · alignment reference capture':''}. These checks describe alignment, not sharpness.</p>`;
+  }
+  const starLabel=id=>id.replace('inset_','Inset ').replace('outer_','Outer ').replace('center_small','Center test block').replace(/\btl\b/,'top left').replace(/\btr\b/,'top right').replace(/\bbl\b/,'bottom left').replace(/\bbr\b/,'bottom right');
+  function starOverviewHTML(data){
+    const preview=data.preview;
+    if(!preview?.url||!(preview.width>0&&preview.height>0))return '';
+    // The preview belongs to the first capture, so use that capture's boxes.
+    const stars=(data.captures[0]?.star_mtf||[]).filter(s=>s.source_box?.length===4&&s.source_box.every(Number.isFinite)&&s.source_box[2]>0&&s.source_box[3]>0);
+    if(!stars.length)return '';
+    const size=preview.width*.014;
+    return `<section class="star-overview"><h3>Where the MTF measurements are attempted</h3><p>These search areas belong to the first capture. They differ from the five USAF regions above. A marked area does not mean a measurement passed; consult its curves and evidence below.</p><svg viewBox="0 0 ${preview.width} ${preview.height}" role="img" aria-label="Reference chart with numbered MTF search areas"><image href="${escape(preview.url)}" width="${preview.width}" height="${preview.height}"/>${stars.map((s,i)=>{const [x,y,w,h]=s.source_box;return `<g><title>${escape(starLabel(s.id))}</title><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="#66c2ff" stroke-width="${size/7}"/><rect x="${x}" y="${y}" width="${size*1.5}" height="${size*1.5}" fill="#10191f"/><text x="${x+size*.75}" y="${y+size*1.12}" text-anchor="middle" font-size="${size}" fill="#fff">${i+1}</text></g>`;}).join('')}</svg><ol>${stars.map(s=>`<li>${escape(starLabel(s.id))}</li>`).join('')}</ol><p>The center test block includes the four tiny stars and the larger pinwheel. It is still subject to the same edge-isolation and angle checks; center coverage is not assumed.</p></section>`;
+  }
+  function starCurveSVG(series,title){
+    if(!series.length)return '<p class="warning">No accepted curves at this location and direction. Missing results are not zero sharpness.</p>';
+    return `<svg class="star-curve" viewBox="0 0 600 300" role="img" aria-label="${escape(title)}: contrast response across apertures"><title>${escape(title)}</title>${[0,.5,1].map(v=>`<path d="M58 ${245-175*v}H575" stroke="#63717d" stroke-dasharray="${v===.5?'6 4':'2 5'}"/><text x="48" y="${250-175*v}" text-anchor="end">${100*v}%</text>`).join('')}<path d="M58 30V245H575" fill="none" stroke="currentColor"/>${[0,.1,.2,.3,.4,.5].map(v=>`<text x="${58+1034*v}" y="264" text-anchor="middle">${v}</text>`).join('')}<text x="316" y="291" text-anchor="middle">Spatial frequency · cycles per output pixel → finer detail</text><text x="58" y="18">Contrast response</text>${series.map(s=>`<g><title>f/${s.aperture} · repeat ${s.repeatIndex+1} · ${escape(s.name)} · MTF50 ${s.mtf50.toFixed(4)} cycles/pixel</title><polyline points="${s.points.map(p=>`${58+1034*p.x},${245-175*p.y}`).join(' ')}" fill="none" stroke="${s.color}" stroke-width="2" ${s.repeatIndex?'stroke-dasharray="7 5"':''}/><circle cx="${58+1034*s.mtf50}" cy="157.5" r="4" fill="${s.color}"/></g>`).join('')}</svg>`;
+  }
   function starRows(data){
     const gs=groups(data),ids=[...new Set(data.captures.flatMap(c=>(c.star_mtf||[]).map(s=>s.id)))];
     return ids.flatMap(id=>['horizontal detail','vertical detail'].map(direction=>({id,direction,cells:gs.map(g=>{
@@ -97,7 +150,7 @@
     const best=Math.max(...totals.filter(t=>Number.isFinite(t.value)).map(t=>t.value));
     return totals.map(t=>({...t,best:Number.isFinite(t.value)&&Math.abs(t.value-best)<=Number.EPSILON*Math.max(1,Math.abs(best))*8}));
   }
-  const api = {starRows, starMeasurement, TABLE_REGIONS, sharpnessRange, sharpnessTotals, REGIONS, valid, color, groups, escape, normalize, apertureEdits, manualRois, roiLabelClass, RoiHistory, compositeLayout, crc32, progressValue, zipStore};
+  const api = {starRows, starMeasurement, starCurveSeries, starConfidence, starCurveSVG, starSupport, starSupportHTML, starTrackingHTML, starLabel, starOverviewHTML, starCoverage, PRIMARY_STAR_IDS, TABLE_REGIONS, sharpnessRange, sharpnessTotals, REGIONS, valid, color, groups, escape, normalize, apertureEdits, manualRois, roiLabelClass, RoiHistory, compositeLayout, crc32, progressValue, zipStore};
   if (typeof module !== 'undefined') module.exports=api;
   if (typeof document === 'undefined') return;
   let manifest={captures:[],apertures:[],rois:[]}, offline=false, apertureIndex=0, region='center', repeatId=null, zoom=1, pan={x:0,y:0}, focused=false, polling=null, token=null, jobId=null, pendingExport=false, setupOpen=true, manualDraft=false, folderPath="", requestPending=false, configDirty=false;
@@ -210,23 +263,33 @@
   function starHTML(){
     if(!manifest.star_mtf)return '';
     const meta=manifest.star_mtf,gs=groups(manifest),capture=selected();
-    const label=id=>id.replace('inset_','Inset ').replace('outer_','Outer ').replace('center_small','Small central star').replace(/\btl\b/,'top left').replace(/\btr\b/,'top right').replace(/\bbl\b/,'bottom left').replace(/\bbr\b/,'bottom right');
-    const rows=starRows(manifest);
-    return `<section class="panel" id="star-mtf"><h2>Experimental · Siemens-spoke sharpness</h2><p>${escape(meta.provenance)}</p><p class="warning">${escape(meta.reason||'Only isolated edges stable under four crop variants are shown. Missing cells are not zero sharpness. Inset stars are not the extreme corners; the small central star may be too small. No overall winner is inferred from incomplete coverage.')}</p>${rows.length?`<div class="scroll"><table><caption>MTF50 · cycles per output pixel (higher preserves finer detail). Each row has its own color range. Same whole capture selections as above; ± is repeat half-range, not confidence. ⚠ means a missing repeat or a repeat difference over 10%.</caption><thead><tr><th>Location / detail direction</th>${gs.map((g,i)=>`<th><button data-column="${i}" class="aperture-column" aria-pressed="${i===apertureIndex}">f/${fmt(g.value)}</button></th>`).join('')}</tr></thead><tbody>${rows.map(row=>{
+    const label=starLabel;
+    const rows=starRows(manifest),ids=[...new Set(rows.map(r=>r.id))];
+    const curveCard=id=>`<article class="star-location"><h3>${escape(label(id))}</h3><div class="star-directions">${['horizontal detail','vertical detail'].map(direction=>{
+      const series=starCurveSeries(manifest,id,direction);
+      const confidence=starConfidence(gs[apertureIndex]?.captures||[],id,direction);
+      const edge=starMeasurement(capture,id,direction);
+      const reasons=[...new Set(manifest.captures.map(c=>starMeasurement(c,id,direction)).filter(e=>!acceptedStar(e)).map(e=>e?.reason||'Not measured'))];
+      return `<div><h4>${escape(direction)}</h4>${starCurveSVG(series,`${label(id)} · ${direction}`)}<p class="star-confidence"><strong>f/${fmt(gs[apertureIndex]?.value)}: ${escape(confidence.label)}</strong><br>${confidence.accepted}/${confidence.total} captures accepted · repeat difference ${confidence.repeatSpread===null?'unavailable':fmt(100*confidence.repeatSpread)+'%'} · largest crop variation ${confidence.cropSpread===null?'unavailable':fmt(100*confidence.cropSpread)+'%'}</p>${acceptedStar(edge)?`<p>Displayed capture: <strong>${fmt(edge.mtf50)} cycles/pixel</strong> = ${fmt(1/edge.mtf50)} pixels per line pair at 50% contrast response.</p>`:`<p class="warning">Displayed capture: ${escape(edge?.reason||'Not measured')}</p>`}${starSupportHTML(edge)}${reasons.length?`<details><summary>Why some curves are missing</summary><ul>${reasons.map(r=>`<li>${escape(r)}</li>`).join('')}</ul></details>`:''}</div>`;
+    }).join('')}</div></article>`;
+    const primaryCurves=PRIMARY_STAR_IDS.map(curveCard).join('');
+    const additionalCurves=ids.filter(id=>!PRIMARY_STAR_IDS.includes(id)).map(curveCard).join('');
+    const coverage=starCoverage(capture);
+    return `<section class="panel" id="star-mtf"><h2>Experimental · Siemens-spoke sharpness</h2><p>${escape(meta.provenance)}</p><p class="warning">${escape(meta.reason||'Missing measurements are not zero sharpness. Inset stars are not the extreme corners. The center test block may not provide usable edges. No overall winner is inferred from incomplete coverage.')}</p><div class="star-guide"><h3>How to read these curves</h3><p>Left to right means finer detail. A higher curve means more contrast preserved at that detail size. Dots mark <strong>MTF50</strong>: where contrast response falls to half its low-frequency value. Higher MTF50 generally means finer detail, but is not a percentage of sharpness or a hard resolution limit.</p><p><strong>Units: cycles per output pixel.</strong> One cycle is one bright–dark line pair. For example, 0.05 cycles/pixel means 20 output pixels per line pair at 50% contrast response. These are not lp/mm; resizing or a different output pixel grid changes these units.</p><p>Each color is one aperture. Solid lines show the first capture, dashed lines show repeats; close curves support repeatability. Repeat difference and crop variation are measured checks, <strong>not a probability of correctness</strong>. Shared bias can affect both repeats. Compare the same location and detail direction.</p></div>${rows.length?`<nav class="star-legend" aria-label="Aperture curve legend">${gs.map((g,i)=>`<button data-column="${i}" aria-pressed="${i===apertureIndex}" style="--curve-color:${STAR_COLORS[i%STAR_COLORS.length]}"><span aria-hidden="true"></span>f/${fmt(g.value)}${i===apertureIndex?' · selected':''}</button>`).join('')}</nav><p>All accepted aperture curves are overlaid below. Confidence checks refer to the selected aperture; source rectangles refer to the displayed whole capture, ${escape(capture?.name||capture?.id||'')}.</p>${starOverviewHTML(manifest)}<p class="star-confidence"><strong>Displayed whole capture: ${coverage.accepted}/${coverage.total} primary locations have both directions accepted.</strong> The five locations include all four outer corners and the center test block. This reports measurement coverage, not a guarantee of accuracy.</p>${primaryCurves}${additionalCurves?`<details><summary>Additional inset-star measurements</summary>${additionalCurves}</details>`:''}<details><summary>MTF50 numbers by aperture</summary><div class="scroll"><table><caption>MTF50 · cycles per output pixel. Each row has its own color range. Same whole capture selections as above; ± is repeat half-range, not confidence. ⚠ marks missing repeats or a repeat difference over 10%.</caption><thead><tr><th>Location / detail direction</th>${gs.map((g,i)=>`<th><button data-column="${i}" class="aperture-column" aria-pressed="${i===apertureIndex}">f/${fmt(g.value)}</button></th>`).join('')}</tr></thead><tbody>${rows.map(row=>{
       const values=row.cells.map(c=>c.value).filter(Number.isFinite),lo=Math.min(...values),hi=Math.max(...values);
       return `<tr><th>${escape(label(row.id))}<small style="display:block">${escape(row.direction)}</small></th>${row.cells.map((c,i)=>`<td data-column="${i}" class="heatmap-value" style="background:${Number.isFinite(c.value)?color(c.value,lo,hi):'#29343d'};color:${Number.isFinite(c.value)&&c.value>=(lo+hi)/2?'#10171c':'#fff'}" title="${escape(c.value===null?c.reason:c.flags.join(' · '))}"><div class="cell"><strong>${fmt(c.value)}${c.flags.length?' ⚠':''}</strong><small>${c.halfRange===null?'':`± ${fmt(c.halfRange)}`}</small></div></td>`).join('')}</tr>`;
-    }).join('')}</tbody></table></div><details><summary>Measurement locations, curves and rejection reasons · ${escape(capture?.name||'')}</summary><p>Green rectangles show the actual measured segments. Curves describe detail perpendicular to each edge. The horizontal axis is 0–0.5 cycles/pixel; the vertical axis is relative contrast 0–1.2.</p><div class="star-evidence">${(capture?.star_mtf||[]).map(star=>{
-      const [, ,w,h]=star.source_box;
-      return `<article><h3>${escape(label(star.id))}</h3><small>Source rectangle: ${star.source_box.map(fmt).join(', ')} pixels</small>${star.crop_url?`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${escape(label(star.id))} measured edge locations"><image href="${escape(star.crop_url)}" width="${w}" height="${h}"/>${star.edges.filter(e=>e.status==='accepted'&&e.box?.length===4).map(e=>`<rect x="${e.box[0]}" y="${e.box[1]}" width="${e.box[2]-e.box[0]}" height="${e.box[3]-e.box[1]}" fill="none" stroke="#00ff9d" stroke-width="6"/>`).join('')}</svg>`:''}${star.edges.map(e=>`<p><strong>${escape(e.direction)}:</strong> ${e.status==='accepted'?`${fmt(e.mtf50)} cycles/pixel · crop variation ${fmt(100*e.crop_spread)}%`:escape([e.reason,...(e.details||[])].join(' '))}</p>${e.status==='accepted'?`<svg viewBox="0 0 340 150" role="img" aria-label="${escape(e.direction)} MTF curve"><path d="M25 10V125H325" fill="none" stroke="currentColor"/><path d="M25 75H325" stroke="#647785" stroke-dasharray="4 4"/><polyline fill="none" stroke="#4bdfbd" stroke-width="2" points="${e.sfr.map((v,i)=>`${25+600*e.frequencies[i]},${125-100*v}`).join(' ')}"/><text x="25" y="145" fill="currentColor" font-size="12">0</text><text x="240" y="145" fill="currentColor" font-size="12">0.5 cycles/pixel</text></svg>`:''}`).join('')}</article>`;
+    }).join('')}</tbody></table></div></details><details><summary>Inspect measured edge locations · ${escape(capture?.name||'')}</summary><p>Green rectangles show accepted edge segments in the original capture. Detail direction is perpendicular to the measured edge.</p><div class="star-evidence">${(capture?.star_mtf||[]).map(star=>{
+      const box=star.source_box||[],w=box[2],h=box[3];
+      return `<article><h3>${escape(label(star.id))}</h3><small>Source rectangle: ${box.map(fmt).join(', ')} pixels</small>${starTrackingHTML(star.tracking)}${star.crop_url&&w>0&&h>0?`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${escape(label(star.id))} measured edge locations"><image href="${escape(star.crop_url)}" width="${w}" height="${h}"/>${(star.edges||[]).filter(e=>acceptedStar(e)&&e.box?.length===4).map(e=>`<rect x="${e.box[0]}" y="${e.box[1]}" width="${e.box[2]-e.box[0]}" height="${e.box[3]-e.box[1]}" fill="none" stroke="#00ff9d" stroke-width="6"/>`).join('')}</svg>`:''}${(star.edges||[]).map(e=>`<p><strong>${escape(e.direction)}:</strong> ${acceptedStar(e)?`${fmt(e.mtf50)} cycles/pixel · crop variation ${Number.isFinite(e.crop_spread)?fmt(100*e.crop_spread)+'%':'unavailable'}${e.reference_capture?' · reference capture #'+escape(e.reference_capture):''}`:escape([e.reason,...(e.details||[])].join(' '))}</p>`).join('')}</article>`;
     }).join('')}</div></details>`:''}</section>`;
   }
   function refreshStarEvidence(){
     const previous=document.getElementById('star-mtf');
     if(!previous)return;
-    const open=previous.querySelector('details')?.open;
+    const open=[...previous.querySelectorAll('details')].map(d=>d.open);
     previous.outerHTML=starHTML();
     const current=document.getElementById('star-mtf');
-    if(open&&current?.querySelector('details'))current.querySelector('details').open=true;
+    current?.querySelectorAll('details').forEach((d,i)=>d.open=Boolean(open[i]));
     current?.querySelectorAll('[data-column]').forEach(el=>el.onclick=()=>selectAperture(Number(el.dataset.column)));
   }
   function compositeReady(capture){return COMPOSITE_REGIONS.every(r=>measurement(capture,r)?.crop?.url);}

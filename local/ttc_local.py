@@ -505,7 +505,9 @@ class Manager:
             positions.write_text(json.dumps(locations),encoding='utf-8')
             with self.lock:
                 self.progress(job,completed=0,total=len(m['frames']),message='Extracting original-pixel Siemens-star regions...')
-            self.run_native(job,['--analyze',config,run,'--track',32,*job['paths']])
+            # Extract fixed original pixels, including contexts rejected by sparse native tracking.
+            # The MTF stage independently verifies dense context landmarks before measuring.
+            self.run_native(job,['--analyze',config,run,*job['paths']])
             with self.lock:
                 self.progress(job,completed=0,total=0,message='Validating isolated star edges and crop stability...')
             output = run/'measurements.json'

@@ -7,13 +7,58 @@ stars. It does **not** currently provide a complete, reliable center-and-four-
 corners MTF map. Keep the established five-region gradient score; expose this
 as a separate opt-in experiment, with missing results and rejection reasons.
 
-The integrated run on all 16 local `vlads4` PS16 DNGs (eight apertures, two
+## Reliability follow-up (2026-10-15)
+
+The revised run accepts **235 / 288** primary measurements, versus 100 / 288 in
+its baseline. All **128 outer-corner measurements** pass: four corners, both
+directions, all sixteen captures. Context tracking passes for all 144 crops.
+The remaining 53 rejections are 21 inset-star measurements and all 32 center
+measurements. There are no remaining tracking or first-reference cascade failures
+in this dataset. The center block searches four small stars and the larger
+pinwheel; none yielded a geometry-eligible near-axis boundary in any capture.
+This does not establish that center sharpness is poor or that another method
+could not measure it.
+
+112 repeat pairs have both primary measurements accepted. The maximum repeat
+difference is **9.24% of pair mean**, also the maximum among the 64 outer-corner
+pairs. Of 383 accepted supporting-spoke checks, five differ from their primary
+by over 20% (maximum 26.19%); the report flags these without replacing the primary.
+Repeatability and crop stability do not establish absolute physical accuracy.
+
+| Location | Horizontal accepted / 16 | Vertical accepted / 16 |
+| --- | ---: | ---: |
+| Outer top left | 16 | 16 |
+| Outer top right | 16 | 16 |
+| Center test block | 0 | 0 |
+| Outer bottom left | 16 | 16 |
+| Outer bottom right | 16 | 16 |
+| Inset top left | 16 | 5 |
+| Inset top right | 15 | 13 |
+| Inset bottom left | 12 | 16 |
+| Inset bottom right | 16 | 14 |
+
+Evidence is in `build/mtf-reliable-final/measurements.json` and
+`build/mtf-reliable-final/latest-report.txt`. Sixteen fixed context crop sets were
+extracted with the native engine; the larger central contexts reuse original
+native crops from the same captures. The first central crop was compared against
+a fresh native extraction: every RGB byte in their 1615 x 1555 overlap agrees.
+The expanded center box is also exercised through the local service integration.
+
+The main curve view prioritizes outer top left, outer top right, center, outer
+bottom left and outer bottom right. Inset curves are additional evidence in a
+separate disclosure. Coverage is computed for the displayed whole capture and
+never filled with another region or another metric.
+
+## Initial baseline
+
+The initial baseline run on all 16 local `vlads4` PS16 DNGs (eight apertures, two
 captures each) accepted 100 of 288 possible location/direction measurements.
 There were 42 pairs with both repeats accepted; their largest difference was
 6.24% of the pair mean. This measures repeatability on this dataset, not absolute
 accuracy or statistical confidence. The initial fixed-box investigation had
 87 accepted results; the final result uses registered locations, native tracking,
-and fixed physical radial endpoints across captures.
+and fixed physical radial endpoints across captures. The follow-up implementation
+below supersedes its first-capture and sparse-tracking policies.
 
 | Location / detail direction | Accepted captures / 16 |
 | --- | ---: |
@@ -39,22 +84,35 @@ comparison, including manual whole-capture overrides.
 ## Method and rejection policy
 
 1. Use the existing SIFT chart registration to project nine investigation areas:
-   four inset stars, four outer partial stars, and one small central star.
+   four inset stars, four outer partial stars, and a center test block containing
+   all four small central stars plus the larger pinwheel.
    Coordinates seed the search; measured boundaries must be found in the image.
 2. Extract original-resolution RGB8 crops through TTC's native decoder. The
-   optional stage currently adds a second extraction pass. Track integer
-   translations, retaining failures instead of using untracked crops. This
-   experiment assumes a fixed-chart series; it does not correct rotation between
-   captures. The first chart itself can be rotated and is feature-registered.
+   optional stage adds a second extraction pass with fixed context boxes.
+   Independently verify translations using unique SIFT context matches, RANSAC,
+   spatial coverage and residual gates. Search alternative context anchors when
+   coverage is incomplete; select by registration coverage, never MTF50. Cache
+   features once per capture and location. Measurements use original pixels,
+   shifting coordinates rather than resampling. Rotation above 0.08 degrees,
+   scale change above 0.1%, or translation above 32 pixels is unsupported.
+   The first chart itself can be rotated and is feature-registered.
 3. Find long straight radial boundaries with OpenCV LSD, 3–7 degrees from a
    pixel axis. Rank by geometry (closeness to 5 degrees), never measured MTF.
    Compare the same spoke on later captures, within angle/position tolerances,
    preserving its radial endpoints despite blur changing detected line lengths.
+   Fit the intersection of long radial boundaries to refine each star center.
+   Search captures in order for each direction's first valid reference; a failed
+   first capture does not poison the remaining series. Up to two additional
+   physical spokes are frozen as supporting checks, never averaged into or
+   substituted for the primary score. Over 20% disagreement is a visible caution,
+   not proof that one edge is wrong.
 4. Initially, the outer half was tested. Neighbouring spokes contaminated many
    of those rectangles and sometimes returned plausible but incorrect values.
    The accepted implementation measures about 3–15% inward along the detected
    spoke from its outer endpoint, leaving the circular border outside. This is
-   typically about 100 pixels long on an inset star in this dataset.
+   typically about 100 pixels long on an inset star in this dataset. For shorter
+   boundaries, extend the nominal span toward 100 pixels, capped at 45% inward;
+   all four extent variants must still pass the same isolation and stability gates.
 5. Require at least 80 pixels of edge length and 30 pixels on each side. Reject
    insufficient contrast, clipped luminance or RGB channels, non-flat margins,
    excessive total variation, and apparent extra transitions. These are
@@ -94,8 +152,13 @@ from manually placed regions, run chart detection first so registered star
 geometry is available. A failed experimental stage does not erase ordinary
 measurements; the report explains why star results are unavailable.
 
-The report has a separate MTF50 table, direction labels, repeat flags, curves,
-measurement overlays, and failure explanations. Aperture-column selection and
+The report leads with overlaid curves for all apertures and repeats, a 50%
+contrast line, and MTF50 markers. Plain-language text explains cycles per output
+pixel and the reciprocal pixels per line pair. Repeat coverage/agreement, crop
+variation, supporting-spoke agreement and context tracking are separate observed
+checks, not statistical confidence. A chart overview identifies actual MTF search
+locations; they are not TTC's USAF boxes. Numeric tables and source overlays remain
+available in disclosures, with explicit missing-result reasons. Aperture-column selection and
 the capture-repeat control update the evidence. Offline ZIPs contain the
 measurements and display previews; the recipient does not need MTF Mapper.
 Raw diagnostic outputs and original-pixel measurement crops stay in the local
@@ -130,7 +193,10 @@ Expected MTF is `exp(-2*pi*pi*sigma*sigma*f*f)`; MTF50 is
 3% crop-variation bound and 0.03 absolute curve-error bound. Negative checks
 cover extra transitions, flat/clipped input, short edges, clipped RGB channels,
 missing executable, and undefined input transfer/registration. A low-noise
-case verifies the isolation gate does not reject all noisy input.
+case verifies the isolation gate does not reject all noisy input. Follow-up tests
+cover context translation, unrelated/rotated crop rejection, a damaged first
+context, a valid reference established by a later capture, coordinate immutability,
+all five central feature seeds and medium-length analytic edges.
 
 Local evidence (ignored, not repository assets):
 
@@ -151,6 +217,12 @@ Primary method references:
 [sampling angles](https://mtfmapper.blogspot.com/2015/06/critical-angles.html).
 
 ## Questions saved for later
+
+- Center coverage remains a measurement-method constraint. Consider a separate
+  known slanted-edge target, or a physically rotated capture that makes a broad
+  central pinwheel boundary usable. Validate before recommending a new capture;
+  digitally rotating existing pixels is not a substitute.
+
 
 - Is a partial, explicitly labelled inset-star MTF comparison useful enough to
   keep in the user-facing product, or should this remain an investigation tool?
