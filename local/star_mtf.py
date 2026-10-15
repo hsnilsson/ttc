@@ -110,7 +110,7 @@ def refine_center(gray, center, radius):
     return np.linalg.lstsq(normals[keep],constants[keep],rcond=None)[0]
 
 
-def line_candidates(gray, center, radius):
+def line_candidates(gray, center, radius, pinwheel=False):
     """Find radial boundaries, then choose by geometry, never by sharpness."""
     cv2.setNumThreads(1)
     lines = cv2.createLineSegmentDetector(cv2.LSD_REFINE_STD).detect(gray)[0]
@@ -126,7 +126,8 @@ def line_candidates(gray, center, radius):
         unit = (b-a) / length
         angle = math.degrees(math.atan2(unit[1], unit[0])) % 180
         slant = min(angle % 90, 90-angle % 90)
-        if not 3 <= slant <= 7:
+        eligible = (28 <= angle <= 32 or 118 <= angle <= 122) if pinwheel else 3 <= slant <= 7
+        if not eligible:
             continue
         normal = np.array([-unit[1], unit[0]])
         if abs(float((center-a) @ normal)) > max(12, radius*.025):
@@ -140,6 +141,9 @@ def line_candidates(gray, center, radius):
                           direction='vertical detail' if abs(unit[0]) > abs(unit[1]) else 'horizontal detail',
                           radial_angle=math.degrees(math.atan2(a[1]-center[1], a[0]-center[0])) % 360,
                           slant=slant))
+        if pinwheel:
+            found[-1].update(method='pinwheel-oblique-edge',
+                             detail_angle_degrees=float((angle+90)%180))
     return sorted(found, key=lambda c: (abs(c['slant']-5), c['radial_angle']))
 
 
@@ -263,7 +267,10 @@ def analyze_star(image, center, radius, directory, executable, reference_edges=N
     candidates = []
     for feature,star in enumerate(search_stars or [dict(center=center,radius=radius)]):
         fitted = refine_center(gray,star['center'],star['radius'])
-        candidates.extend(dict(c,feature_id=feature) for c in line_candidates(gray,fitted,star['radius']))
+        # The broad central pinwheel supplies a perpendicular 30/120-degree
+        # pair. Keep this explicitly distinct from near-axis star measurements.
+        candidates.extend(dict(c,feature_id=feature) for c in line_candidates(
+            gray,fitted,star['radius'],pinwheel=bool(search_stars and feature==4)))
     candidates.sort(key=lambda c:(abs(c['slant']-5),c['feature_id'],c['radial_angle']))
     results = []
     for direction in ('horizontal detail','vertical detail'):
@@ -494,11 +501,12 @@ def analyze_run(run, locations, executable):
                         edge['candidates_tested'] = audit.get('candidates_tested',0)
                         edge['details'] = sorted(audit.get('details',[]))
                         if location['id']=='center_small':
-                            edge['reason'] += ' The four small central stars and the central pinwheel were searched; none supplied a valid near-axis slanted edge with sufficient clean margins.'
+                            edge['reason'] += ' The four small central stars and the central pinwheel were searched; no eligible isolated edge passed the checks.'
             records[frame].update(edges=edges,tracking=registration)
             frames[frame].append(records[frame])
     return dict(schema_version=2,status='experimental',mapper_version='0.7.40',
                 method_settings=dict(slant_degrees=[3,7],minimum_edge_pixels=80,minimum_margin_pixels=30,
+                    center_pinwheel_edge_degrees=[[28,32],[118,122]],
                     maximum_crop_spread=.10,reference_selection='First valid physical edge in capture order; never highest MTF50',
                     supporting_spokes='Up to two additional fixed spokes; no substitution or averaging'),
                 mapper_sha256=hashlib.sha256(Path(executable).read_bytes()).hexdigest(),

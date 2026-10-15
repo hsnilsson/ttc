@@ -75,6 +75,20 @@ class GeometryChecks(unittest.TestCase):
     def test_no_candidates_on_blank(self):
         self.assertEqual(mtf.line_candidates(np.zeros((500,500),np.uint8),(250,250),200),[])
 
+    def test_pinwheel_search_keeps_a_perpendicular_oblique_pair(self):
+        y,x=np.mgrid[:800,:800]
+        theta=np.arctan2(y-400,x-400)
+        image=np.where(np.sin(6*theta)>0,210,35).astype(np.uint8)
+        image[np.hypot(x-400,y-400)>300]=120
+        image=mtf.cv2.GaussianBlur(image,(9,9),1.5)
+        self.assertEqual(mtf.line_candidates(image,[400,400],300),[])
+        candidates=mtf.line_candidates(image,[400,400],300,pinwheel=True)
+        self.assertEqual({c['direction'] for c in candidates},{'horizontal detail','vertical detail'})
+        for candidate in candidates:
+            self.assertEqual(candidate['method'],'pinwheel-oblique-edge')
+            self.assertTrue(28<candidate['angle']<32 or 118<candidate['angle']<122)
+            self.assertAlmostEqual(candidate['detail_angle_degrees'],(candidate['angle']+90)%180)
+
 
 class SeriesChecks(unittest.TestCase):
     def test_radial_center_is_found_from_image_not_seed(self):
@@ -143,6 +157,28 @@ class SeriesChecks(unittest.TestCase):
 
 @unittest.skipUnless(os.environ.get('TTC_MTF_MAPPER'),'Set TTC_MTF_MAPPER for external-engine validation')
 class MapperChecks(unittest.TestCase):
+    def test_oblique_pinwheel_edges_at_angles_phases_and_known_blurs(self):
+        # Both perpendicular directions; subpixel phase must not change MTF.
+        mapper=Path(os.environ['TTC_MTF_MAPPER'])
+        y,x=np.mgrid[:800,:800]
+        for angle in (28.,30.,32.,118.,120.,122.):
+            unit=np.array([math.cos(math.radians(angle)),math.sin(math.radians(angle))])
+            normal=np.array([-unit[1],unit[0]])
+            for sigma in (1.,2.,3.):
+                for phase in (0.,.35,.7):
+                    with self.subTest(angle=angle,sigma=sigma,phase=phase), tempfile.TemporaryDirectory() as tmp:
+                        a=np.array([400.,400.])-220*unit+phase*normal
+                        b=a+440*unit
+                        distance=(x-a[0])*normal[0]+(y-a[1])*normal[1]
+                        image=.1+.7*(.5+.5*np.vectorize(math.erf)(distance/(sigma*math.sqrt(2))))
+                        result=mtf.measure_candidate(image,dict(line=[*a,*b],angle=angle),Path(tmp),mapper)
+                        self.assertEqual(result['status'],'accepted',result)
+                        expected=math.sqrt(2*math.log(2))/(2*math.pi*sigma)
+                        self.assertLess(abs(result['mtf50']/expected-1),.03)
+                        self.assertLess(result['crop_spread'],.03)
+                        curve=np.exp(-2*math.pi**2*sigma**2*np.array(result['frequencies'])**2)
+                        self.assertLess(float(np.max(np.abs(curve-result['sfr']))),.03)
+
     def test_known_gaussian_blur_and_crop_stability(self):
         mapper=Path(os.environ['TTC_MTF_MAPPER'])
         for sigma in (1.,2.,3.):

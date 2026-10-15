@@ -1,6 +1,40 @@
 # Siemens-spoke slanted-edge experiment
 
-## Verdict (2026-10-15)
+## Center pinwheel follow-up (2026-10-15)
+
+The existing images now provide accepted measurements at all five primary
+locations. The center uses two broad pinwheel boundaries, at approximately 30
+and 120 degrees to image horizontal, rather than requiring 3–7-degree edges.
+The previous center failure was a geometry restriction, not evidence that no
+usable central edge existed. No images are rotated or resampled for measurement.
+
+All 32 center measurements pass across the sixteen captures. Maximum repeat
+difference is 7.22% of pair mean; maximum crop sensitivity is 1.00%. Together with
+the unchanged 128 outer-corner measurements this gives 160/160 primary results,
+and 267/288 including inset stars. Each center direction uses the same physical
+edge across captures, selected by geometry/validity rather than highest MTF50.
+No second isolated pinwheel edge passed for either direction, so independent
+supporting-edge agreement remains unavailable and is shown as such.
+
+The center's **detail directions are oblique**, approximately 30 and 120 degrees;
+they are not horizontal/vertical corner measurements. Compare center apertures
+within each direction. Do not combine them with the corner results into an
+overall MTF score or infer a direction-matched center/corner ranking. Result
+metadata records `method: pinwheel-oblique-edge` and `detail_angle_degrees`;
+the historical `direction` keys remain grouping keys for viewer compatibility.
+
+54 additional analytic cases cover edges at 28/30/32 and 118/120/122 degrees,
+Gaussian blur sigma 1/2/3 pixels, and three subpixel phases. Each must meet the
+existing 3% MTF50 error, 3% crop-spread, and 0.03 absolute curve-error bounds.
+The normal clipping, isolation, tracking, reference identity and 10% crop-spread
+gates remain in force. This is experimental captured-system SFR, not certified
+ISO measurement or independently calibrated lens MTF. Repeatability does not
+remove possible bias from the target, reconstruction or rendering.
+
+Evidence: `build/mtf-center-series/measurements.json`; updated report pointer:
+`build/mtf-center-series/latest-report.txt`.
+
+## Previous verdict (2026-10-15; superseded above)
 
 The user's proposed method works on some outer segments of Vlad's Siemens
 stars. It does **not** currently provide a complete, reliable center-and-four-
@@ -106,6 +140,10 @@ comparison, including manual whole-capture overrides.
    physical spokes are frozen as supporting checks, never averaged into or
    substituted for the primary score. Over 20% disagreement is a visible caution,
    not proof that one edge is wrong.
+   Exception: the large central pinwheel searches edge angles 28–32 and
+   118–122 degrees, yielding two perpendicular oblique detail directions. Other
+   stars retain their original near-axis gate. Unsupported chart rotations are
+   rejected rather than digitally rotated into the allowed range.
 4. Initially, the outer half was tested. Neighbouring spokes contaminated many
    of those rectangles and sometimes returned plausible but incorrect values.
    The accepted implementation measures about 3–15% inward along the detected
@@ -218,10 +256,9 @@ Primary method references:
 
 ## Questions saved for later
 
-- Center coverage remains a measurement-method constraint. Consider a separate
-  known slanted-edge target, or a physically rotated capture that makes a broad
-  central pinwheel boundary usable. Validate before recommending a new capture;
-  digitally rotating existing pixels is not a substitute.
+- Center coverage is now available from the existing pinwheel, but its oblique
+  directions differ from the corners. A known near-axis slanted-edge target
+  would still be useful for independent validation and direction-matched results.
 
 
 - Is a partial, explicitly labelled inset-star MTF comparison useful enough to

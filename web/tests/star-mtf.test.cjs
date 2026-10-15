@@ -103,3 +103,9 @@ test('primary coverage includes center, requires both directions and never subst
   assert.equal(starCoverage(capture).accepted,4);
   assert.equal(starCoverage(null).accepted,0);
 });
+const {starDirectionLabel}=require('../viewer.js');
+test('pinwheel directions are explicitly oblique, never labelled horizontal or vertical',()=>{
+  assert.equal(starDirectionLabel({method:'pinwheel-oblique-edge',detail_angle_degrees:30.12},'horizontal detail'),'Oblique detail · 30.1° from image horizontal');
+  assert.equal(starDirectionLabel({method:'pinwheel-oblique-edge',detail_angle_degrees:119.9},'vertical detail'),'Oblique detail · 119.9° from image horizontal');
+  assert.equal(starDirectionLabel({},'horizontal detail'),'horizontal detail');
+});
