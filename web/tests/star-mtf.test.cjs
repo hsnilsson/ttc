@@ -109,3 +109,19 @@ test('pinwheel directions are explicitly oblique, never labelled horizontal or v
   assert.equal(starDirectionLabel({method:'pinwheel-oblique-edge',detail_angle_degrees:119.9},'vertical detail'),'Oblique detail · 119.9° from image horizontal');
   assert.equal(starDirectionLabel({},'horizontal detail'),'horizontal detail');
 });
+const {starPlotLimit,starApertureSummary}=require('../viewer.js');
+test('aperture summaries preserve selected captures and flag overlapping repeat ranges',()=>{
+ const make=(id,aperture,value)=>({id,aperture,star_mtf:[{id:'outer_tl',edges:[{direction:'horizontal detail',status:'accepted',mtf50:value,crop_spread:.01}]}]});
+ const data={captures:[make('a',4,.1),make('b',4,.102),make('c',5.6,.103),make('d',5.6,.101)],apertures:[{value:4,selectedCaptureId:'a'},{value:5.6,selectedCaptureId:'c'}]};
+ let summary=starApertureSummary(data,'outer_tl','horizontal detail');
+ assert.equal(summary.best,5.6);assert.deepEqual(summary.similar,[4,5.6]);assert.equal(summary.provisional,false);
+ data.apertures[1].selectedCaptureId='missing';
+ summary=starApertureSummary(data,'outer_tl','horizontal detail');assert.equal(summary.best,4);assert.equal(summary.provisional,true);
+ data.captures=[];assert.match(starApertureSummary(data,'outer_tl','horizontal detail').text,/No accepted/);
+});
+test('useful plot range includes every region, repeat and high-frequency rebound',()=>{
+ const data={captures:[{id:'a',aperture:4,star_mtf:[{id:'center_small',edges:[{direction:'horizontal detail',status:'accepted',mtf50:.08,frequencies:[0,.1,.2,.3,.4,.5],sfr:[1,.4,.09,.01,.02,0]}]}]}]};
+ assert.equal(starPlotLimit(data),.2);
+ data.captures[0].star_mtf[0].edges[0].sfr[4]=.15;assert.equal(starPlotLimit(data),.5);
+ data.captures[0].star_mtf[0].edges[0].status='rejected';assert.equal(starPlotLimit(data),.1);
+});

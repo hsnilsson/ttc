@@ -254,7 +254,28 @@ Primary method references:
 [single-edge input and margins](https://mtfmapper.blogspot.com/2017/05/),
 [sampling angles](https://mtfmapper.blogspot.com/2015/06/critical-angles.html).
 
+## Curve presentation follow-up (2026-10-16)
+
+All regions share an automatic frequency axis ending after the last accepted
+curve sample above 10% response (rounded up to 0.05 cycles/pixel, capped at
+Nyquist). This considers every location and repeat, including high-frequency
+rebounds. Full range restores 0–0.5. Display lines interpolate at the visible
+boundary; measured data and MTF50 are unchanged.
+
+Each direction summarizes the highest MTF50 among selected whole captures.
+“Similar results” denotes overlap with that aperture's observed repeat range,
+expanded on each side by each capture's crop sensitivity. This is a conservative
+presentation heuristic, not a confidence interval or statistical equivalence.
+Missing, single, or inconsistent repeats make the summary provisional. Regional
+edge previews are available beside the curves; supporting-edge diagnostics are
+expandable. No combined MTF winner is calculated across unlike directions.
+
 ## Questions saved for later
+
+- Physical-scale calibration: what is one verified distance between identifiable
+  target marks? Until supplied, retain cycles/output pixel; do not guess lp/mm.
+  A calibrated contrast-at-chosen-lp/mm view can follow that decision.
+
 
 - Center coverage is now available from the existing pinwheel, but its oblique
   directions differ from the corners. A known near-axis slanted-edge target
