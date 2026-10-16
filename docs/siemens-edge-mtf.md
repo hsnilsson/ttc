@@ -270,6 +270,79 @@ Missing, single, or inconsistent repeats make the summary provisional. Regional
 edge previews are available beside the curves; supporting-edge diagnostics are
 expandable. No combined MTF winner is calculated across unlike directions.
 
+## Corner improvement audit (2026-10-16)
+
+The large corner improvement is present in the rendered original-pixel crops,
+and survives several changes to the measurement method. It is not established
+as an aperture-only, lens-only effect: focus, target geometry, capture variation,
+and the rendering pipeline remain part of the measured system.
+
+Comparing the mean of both f/3.5 captures with the mean of both f/5.6 captures:
+
+| Region | Horizontal-detail MTF50 gain | Vertical-detail MTF50 gain | Horizontal 10–90% width, pixels | Vertical 10–90% width, pixels |
+| --- | ---: | ---: | ---: | ---: |
+| Top left | 36.5% | 35.2% | 13.40 → 10.38 | 11.22 → 8.91 |
+| Top right | 31.7% | 50.6% | 12.85 → 10.34 | 14.32 → 10.08 |
+| Bottom left | 29.7% | 41.0% | 12.46 → 10.46 | 13.16 → 9.81 |
+| Bottom right | 31.6% | 52.8% | 11.51 → 9.37 | 15.08 → 10.57 |
+
+MTF50 gain means a higher spatial frequency at 50% contrast response; it does
+not mean that contrast itself increased by that percentage. A smaller transition
+width means the dark-to-light edge occupies fewer output pixels. Width is an
+independent diagnostic, not an alternative MTF50 calibration or a conversion
+to physical lp/mm. These repeat means are preferable to the earlier rough
+40–65% description based on selected captures.
+
+Checks on the existing 16 captures:
+
+- All 256 shifted-window MTF Mapper measurements passed the same isolation and
+  clipping checks. The f/3.5-to-f/5.6 gains remain 28.4–52.6%. Windows move from
+  the production outer spoke segment to fractions 0.06–0.18 and 0.10–0.22 of
+  the detected line, with a 32-pixel margin and no image resampling.
+- Direct, binned edge profiles measure 10–90% transitions without MTF Mapper.
+  Linear-luminance widths narrow by 16.0–29.9% in all eight corner/direction
+  combinations. Encoded RGB brightness and the encoded green channel also
+  narrow in every combination, so inverse tone-curve processing alone cannot
+  explain the trend. These channels still share the underlying rendered image.
+- Even the weaker f/5.6 repeat exceeds the stronger f/3.5 repeat by 23.4–46.4%
+  in MTF50. Choosing a favourable repeat does not create the improvement.
+- Detected edge slants stay between 4.79° and 5.25°. The largest context-tracking
+  residual (90th percentile) is 1.405 pixels, within the existing acceptance
+  threshold. The independent USAF-patch detail scores also improve in all four
+  corners; they are a different metric and their magnitudes are not comparable.
+
+There is a meaningful capture-to-capture spatial tradeoff. At f/5.6, the second
+capture (`_DSC4366-_DSC4381.dng`) has 6.14% and 7.49% higher center MTF50 than
+the first (`_DSC4350-_DSC4365.dng`), while all eight corner measurements decrease
+by 5.78–8.83%. Similar opposition occurs at f/7.1 and f/8. This is consistent
+with a focus/field-geometry balance, but does not prove refocusing, field
+curvature, or target non-flatness. The existing series cannot separate those
+causes. Center and corner directions differ, so their absolute scores should
+not be pooled; within-location repeat changes can still be inspected.
+
+Reproduce with `scripts/audit-corner-mtf.py`, supplying:
+
+```text
+--source build/mtf-reliable-final
+--manifest build/mtf-center-series/report-manifest.json
+--output build/corner-audit-verified
+--mapper build/mtf-investigation/mapper/bin/mtf_mapper.exe
+```
+
+The output directory must be new. The script checks capture identity and native
+crop dimensions before measuring. Local evidence is stored in the ignored
+`build/corner-audit-verified/audit.json` and its individual Mapper output folders.
+`tests/corner_audit_checks.py` checks the width estimator against analytical
+Gaussian-blurred edges at two orientations, four blur widths, and both
+polarities (within 3%), and rejects a flat patch. This validates the diagnostic
+algorithm, not the physical target or the camera's processing.
+
+The remaining useful experiment, saved for later, is a controlled focus bracket
+at each aperture with the target and camera fixed. It would help distinguish
+an aperture benefit from choosing different center/corner focus compromises.
+No new capture is needed to conclude that the current rendered corners really
+become sharper; new evidence is needed to assign the entire change to the lens.
+
 ## Questions saved for later
 
 - Physical-scale calibration: what is one verified distance between identifiable
