@@ -1,4 +1,4 @@
-# TTC local contract v1
+# Local API and result contract v1
 
 Canonical UI directory: `web/`; live entry and offline template: `web/index.html`. Offline embedding replaces null inside `<script id="ttc-manifest" type="application/json">null</script>` with JSON escaped for `<`. No remote resources. Python 3.10+ stdlib launcher `python local/ttc_local.py serve --engine build/ttc-cli.exe --workspace build/local-jobs`. Portable runtime packaging documented separately.
 

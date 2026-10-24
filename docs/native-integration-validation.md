@@ -1,4 +1,7 @@
-# Nightshift integration — 2026-09-21
+# Native rendering and ROI integration validation
+
+Historical validation snapshot from 2026-09-21. Results and limitations below
+describe the native engine tested on that date.
 
 Integrated performance commits `0990441`, `4218f96` and ROI analysis commit
 `037c95b`, starting from local main `66803a8`. Existing main history is preserved.
@@ -28,7 +31,7 @@ Ran the combined executable with examples/vlads4-19136x12752.roi, --track 8,
 and read-only D:/camera scanning/vlads4/_DSC3982-_DSC3997.dng and
 _DSC3998-_DSC4013.dng. Both decode to 19136 x 12752. All ten rows accepted;
 second-frame shifts are (0,1) for all five ROIs. Metrics exactly match the
-feature task's validated report. Coordinator inspected the reference image.
+feature task's validated report. The reference image was visually inspected.
 All generated reports and executable are under ignored build/:
 
 - build/ttc-simple.exe
@@ -36,11 +39,7 @@ All generated reports and executable are under ignored build/:
 - build/combined-real-stack/report.html
 - build/combined-real-stack/report.csv
 
-README merge conflict resolved by keeping current build/rendering instructions
-and adding ROI usage, without reintroducing outdated memory/size claims.
-No source images changed. No remote push or GitHub discussion writes.
-
-## Scope and tomorrow's decisions
+## Scope and limitations at validation
 
 Analysis is relative rendered-image detail, not calibrated MTF/lp/mm or an
 aperture winner. Regions are configured in a text file; there is no interactive
@@ -49,6 +48,3 @@ RGB8, camera/as-shot WB and fixed processing are deliberate current defaults.
 Potential next steps: interactive ROI selection, broader geometry tracking,
 calibrated USAF analysis/fringing, and a chosen scientific/color workflow.
 See docs/roi-analysis.md and docs/roi-validation.md for detailed limitations.
-
-Task worktrees and ignored benchmark/report artifacts are retained for review;
-cleanup must preserve those artifacts and avoid any still-active task worktree.

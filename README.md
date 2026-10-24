@@ -132,7 +132,7 @@ across all five regions; unsupported frames are flagged and crop exports remain
 available. Alignment does not correct rotation, scale, or subpixel motion.
 Repeat half-range is a descriptive spread, not calibrated uncertainty.
 
-See the [local API/result contract](docs/nightshift2-contract.md) and
+See the [local API/result contract](docs/local-api-contract.md) and
 [portable Windows distribution](docs/local-distribution.md). The portable
 folder includes its own Python runtime; users do not need to install Python.
 

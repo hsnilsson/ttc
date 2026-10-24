@@ -1,4 +1,7 @@
-# Nightshift 2 handoff — 2026-09-21
+# Windows application validation
+
+Historical validation snapshot from 2026-09-21. Results and limitations below
+describe the application tested on that date.
 
 ## Delivered workflow
 
@@ -16,7 +19,7 @@ Windows x64 portable folder, not a signed installer.
 
 ## Validation
 
-Coordinator combined and compiled all three task branches. Native ROI checks,
+The integrated application was compiled and tested. Native ROI checks,
 content-detector negative/transform checks, optional alignment-helper checks,
 full-detail export pixel/no-overwrite checks, seven service tests and eight
 viewer tests passed. JavaScript syntax and Git whitespace checks passed.
@@ -47,7 +50,7 @@ Extract the application ZIP fully and double-click Launch TTC.vbs. If Windows
 policy disables VBScript, run ttc.cmd serve. Use Stop local service in the UI;
 closing a browser tab alone does not stop the local helper.
 
-## Questions saved for later
+## Limitations and follow-up validation
 
 - Validate the unsigned package and native folder chooser on a clean Windows PC.
 - Decide whether fractional-pixel display alignment is worth interpolation;
@@ -58,8 +61,3 @@ closing a browser tab alone does not stop the local helper.
   calibrated confidence interval. Noise, processing and target content matter.
 - The five USAF boxes do not justify MTF curves. See the separate MTF feasibility
   research for suitable-edge validation and exact-release licensing work.
-
-Source images and the original ditch-python checkout are preserved. No remote
-push or GitHub discussion writes were performed. Worker worktrees and ignored
-QA artifacts are retained for review; cleanup must preserve them and avoid
-active worktrees.
